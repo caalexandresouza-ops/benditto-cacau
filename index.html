@@ -105,33 +105,28 @@ function App() {
     const sbUpsert = async (tb, data) => { await fetch(`${SB_URL}/rest/v1/${tb}`, { method: 'POST', headers: Object.assign(Object.assign({}, sbH), { 'Prefer': 'resolution=merge-duplicates,return=representation' }), body: JSON.stringify(data) }); };
     const sbDel = async (tb, id) => { await fetch(`${SB_URL}/rest/v1/${tb}?id=eq.${id}`, { method: 'DELETE', headers: sbH }); };
     const [pronto, setPronto] = useState(false);
-    useEffect(() => {
-        (async () => {
-            try {
-                const h = { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56ZXhqaWxtd3Zid3Bpb25wYnprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MDI3NzUsImV4cCI6MjA5NDE3ODc3NX0.br90esj5yC_QAFfFWCQ-uzf218AhHpvazqdU5qtU6sw', 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56ZXhqaWxtd3Zid3Bpb25wYnprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MDI3NzUsImV4cCI6MjA5NDE3ODc3NX0.br90esj5yC_QAFfFWCQ-uzf218AhHpvazqdU5qtU6sw' };
-                const g = async (t) => { const r = await fetch('https://nzexjilmwvbwpionpbzk.supabase.co/rest/v1/' + t + '?select=*&order=id', { headers: h }); return r.json(); };
-                const [cl, pr, pd, dp, cp, ins, rc] = await Promise.all([g('clientes'), g('produtos'), g('pedidos'), g('departamentos'), g('compras'), g('insumos'), g('receitas')]);
-                if (cl === null || cl === void 0 ? void 0 : cl.length)
-                    setClientes(cl);
-                if (pr === null || pr === void 0 ? void 0 : pr.length)
-                    setProdutos(pr);
-                if (pd === null || pd === void 0 ? void 0 : pd.length)
-                    setPedidos(pd.map(p => (Object.assign(Object.assign({}, p), { itens: typeof p.itens === 'string' ? JSON.parse(p.itens) : p.itens || [] }))));
-                if (dp === null || dp === void 0 ? void 0 : dp.length)
-                    setDepts(dp.map(d => d.nome));
-                if (cp === null || cp === void 0 ? void 0 : cp.length)
-                    setCompras(cp);
-                if (ins === null || ins === void 0 ? void 0 : ins.length)
-                    setInsumos(ins.map(i => (Object.assign(Object.assign({}, i), { historico: typeof i.historico === 'string' ? JSON.parse(i.historico) : i.historico || [] }))));
-                if (rc === null || rc === void 0 ? void 0 : rc.length)
-                    setReceitas(rc.map(r => (Object.assign(Object.assign({}, r), { itens: typeof r.itens === 'string' ? JSON.parse(r.itens) : r.itens || [], unidadeRend: r.unidade_rend, criadoEm: r.criado_em }))));
-            }
-            catch (e) {
-                console.warn('Supabase erro:', e);
-            }
-            setPronto(true);
-        })();
-    }, []);
+    useEffect(() => { (async () => { try {
+        const h = { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56ZXhqaWxtd3Zid3Bpb25wYnprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MDI3NzUsImV4cCI6MjA5NDE3ODc3NX0.br90esj5yC_QAFfFWCQ-uzf218AhHpvazqdU5qtU6sw', 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56ZXhqaWxtd3Zid3Bpb25wYnprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MDI3NzUsImV4cCI6MjA5NDE3ODc3NX0.br90esj5yC_QAFfFWCQ-uzf218AhHpvazqdU5qtU6sw' };
+        const g = async (t) => { const r = await fetch('https://nzexjilmwvbwpionpbzk.supabase.co/rest/v1/' + t + '?select=*&order=id', { headers: h }); return r.json(); };
+        const [cl, pr, pd, dp, cp, ins, rc] = await Promise.all([g('clientes'), g('produtos'), g('pedidos'), g('departamentos'), g('compras'), g('insumos'), g('receitas')]);
+        if (cl === null || cl === void 0 ? void 0 : cl.length)
+            setClientes(cl);
+        if (pr === null || pr === void 0 ? void 0 : pr.length)
+            setProdutos(pr);
+        if (pd === null || pd === void 0 ? void 0 : pd.length)
+            setPedidos(pd.map(p => (Object.assign(Object.assign({}, p), { itens: typeof p.itens === 'string' ? JSON.parse(p.itens) : p.itens || [] }))));
+        if (dp === null || dp === void 0 ? void 0 : dp.length)
+            setDepts(dp.map(d => d.nome));
+        if (cp === null || cp === void 0 ? void 0 : cp.length)
+            setCompras(cp);
+        if (ins === null || ins === void 0 ? void 0 : ins.length)
+            setInsumos(ins.map(i => (Object.assign(Object.assign({}, i), { historico: typeof i.historico === 'string' ? JSON.parse(i.historico) : i.historico || [] }))));
+        if (rc === null || rc === void 0 ? void 0 : rc.length)
+            setReceitas(rc.map(r => (Object.assign(Object.assign({}, r), { itens: typeof r.itens === 'string' ? JSON.parse(r.itens) : r.itens || [], unidadeRend: r.unidade_rend, criadoEm: r.criado_em }))));
+    }
+    catch (e) {
+        console.warn(e);
+    } setPronto(true); })(); }, []);
     if (!pronto)
         return (React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0f0f0f', flexDirection: 'column', gap: '16px' } },
             React.createElement("div", { style: { fontSize: '40px' } }, "\uD83C\uDF6C"),
@@ -164,13 +159,15 @@ function App() {
         if (!f)
             return;
         const r = new FileReader();
-        r.onload = (e) => {
+        r.onload = async (e) => {
+            var _a;
             try {
                 const d = JSON.parse(e.target.result);
                 if (!d.clientes || !d.produtos || !d.pedidos) {
                     notif('⚠️ Arquivo inválido!');
                     return;
                 }
+                notif('⏳ Importando e enviando para a nuvem...');
                 setClientes(d.clientes);
                 setProdutos(d.produtos);
                 setPedidos(d.pedidos);
@@ -182,7 +179,28 @@ function App() {
                     setInsumos(d.insumos);
                 if (d.receitas)
                     setReceitas(d.receitas);
-                notif(`✅ Restaurado! ${d.clientes.length} clientes, ${d.pedidos.length} pedidos.`);
+                try {
+                    const h = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=representation' };
+                    const up = async (tb, data) => { if (!data || !data.length)
+                        return; await fetch(SB_URL + '/rest/v1/' + tb, { method: 'POST', headers: h, body: JSON.stringify(data) }); };
+                    await up('clientes', d.clientes);
+                    await up('produtos', d.produtos);
+                    await up('pedidos', d.pedidos.map(p => (Object.assign(Object.assign({}, p), { itens: JSON.stringify(p.itens || []) }))));
+                    if ((_a = d.departamentos) === null || _a === void 0 ? void 0 : _a.length)
+                        for (const nome of d.departamentos) {
+                            try {
+                                await fetch(SB_URL + '/rest/v1/departamentos', { method: 'POST', headers: h, body: JSON.stringify({ nome }) });
+                            }
+                            catch (e) { }
+                        }
+                    await up('compras', d.compras || []);
+                    await up('insumos', (d.insumos || []).map(i => (Object.assign(Object.assign({}, i), { historico: JSON.stringify(i.historico || []) }))));
+                    await up('receitas', (d.receitas || []).map(rc => (Object.assign(Object.assign({}, rc), { itens: JSON.stringify(rc.itens || []), unidade_rend: rc.unidadeRend, criado_em: rc.criadoEm }))));
+                    notif(`✅ Importado e salvo na nuvem! ${d.clientes.length} clientes, ${d.produtos.length} produtos, ${d.pedidos.length} pedidos.`);
+                }
+                catch (e) {
+                    notif(`✅ Importado localmente! ${d.clientes.length} clientes. (Erro nuvem: ${e.message})`);
+                }
             }
             catch (e) {
                 notif('⚠️ Erro ao ler arquivo');
@@ -1066,34 +1084,179 @@ function App() {
                                     React.createElement("button", { onClick: async (e) => { e.stopPropagation(); await sbDel('compras', item.id); setCompras(compras.filter(c => c.id !== item.id)); }, style: { background: `${C.rd}22`, color: C.rd, padding: '4px 7px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', flexShrink: 0 } }, "\u2715")));
                             }))))));
                 })(),
-                aba === 'insumos' && React.createElement("div", null,
-                    React.createElement("div", { style: { display: 'flex', gap: '7px', marginBottom: '16px' } },
-                        React.createElement("button", { onClick: () => setAbaIns('insumos'), style: Object.assign({}, B(abaIns === 'insumos' ? C.pr : C.s3, abaIns === 'insumos' ? 'white' : C.mt)) },
-                            "\uD83E\uDDEA Insumos (",
-                            insumos.length,
-                            ")"),
-                        React.createElement("button", { onClick: () => setAbaIns('receitas'), style: Object.assign({}, B(abaIns === 'receitas' ? C.pr : C.s3, abaIns === 'receitas' ? 'white' : C.mt)) },
-                            "\uD83D\uDCCB Receitas (",
-                            receitas.length,
-                            ")")),
-                    React.createElement("div", { style: Object.assign(Object.assign({}, K), { textAlign: 'center', padding: '40px 20px' }) },
-                        React.createElement("div", { style: { fontSize: '40px', marginBottom: '12px' } }, abaIns === 'insumos' ? '🧪' : '📋'),
-                        React.createElement("div", { style: { fontSize: '14px', fontWeight: '700', color: C.tx, marginBottom: '8px' } }, abaIns === 'insumos' ? `${insumos.length} insumos cadastrados` : `${receitas.length} receitas cadastradas`),
-                        React.createElement("div", { style: { fontSize: '12px', color: C.mt, marginBottom: '20px' } },
-                            "Para gerenciar ",
-                            abaIns === 'insumos' ? 'insumos e calculadora' : 'receitas e rendimento',
-                            ", use o sistema completo pelo arquivo HTML baixado."),
-                        React.createElement("div", { style: { background: `${C.pr}11`, border: `1px solid ${C.pr}33`, borderRadius: '9px', padding: '14px', textAlign: 'left' } },
-                            React.createElement("div", { style: { fontSize: '11px', color: C.mt, marginBottom: '8px', fontWeight: '700', textTransform: 'uppercase' } }, "\uD83D\uDCA1 Como acessar o sistema completo"),
-                            React.createElement("div", { style: { fontSize: '12px', color: C.tx } },
-                                "1. Clique em ",
-                                React.createElement("strong", { style: { color: C.pr } }, "\uD83D\uDCBE Exportar"),
-                                " no menu",
-                                React.createElement("br", null),
-                                "2. Baixe o arquivo ",
-                                React.createElement("strong", { style: { color: C.pr } }, "benditto-cacau.html"),
-                                React.createElement("br", null),
-                                "3. Abra no Chrome para usar todas as fun\u00E7\u00F5es")))))),
+                aba === 'insumos' && (() => {
+                    const uns = ['g', 'kg', 'mL', 'L', 'un'];
+                    const insFl = insumos.filter(i => i.nome);
+                    return (React.createElement("div", null,
+                        React.createElement("div", { style: { display: 'flex', gap: '7px', marginBottom: '16px' } },
+                            React.createElement("button", { onClick: () => setAbaIns('insumos'), style: Object.assign({}, B(abaIns === 'insumos' ? C.pr : C.s3, abaIns === 'insumos' ? 'white' : C.mt)) },
+                                "\uD83E\uDDEA Insumos (",
+                                insumos.length,
+                                ")"),
+                            React.createElement("button", { onClick: () => setAbaIns('receitas'), style: Object.assign({}, B(abaIns === 'receitas' ? C.pr : C.s3, abaIns === 'receitas' ? 'white' : C.mt)) },
+                                "\uD83D\uDCCB Receitas (",
+                                receitas.length,
+                                ")")),
+                        abaIns === 'insumos' && React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '270px 1fr', gap: '14px' } },
+                            React.createElement("div", { style: Object.assign(Object.assign({}, K), { height: 'fit-content' }) },
+                                React.createElement("div", { style: { fontSize: '12px', fontWeight: '700', color: C.tx, marginBottom: '12px', paddingBottom: '8px', borderBottom: `1px solid ${C.bd}` } }, "\u2795 Novo Insumo"),
+                                React.createElement(Lb, { t: "Nome *" }),
+                                React.createElement("input", { value: insNm, onChange: e => setInsNm(e.target.value), placeholder: "Ex: Chocolate", style: Object.assign(Object.assign({}, I), { marginBottom: '8px' }) }),
+                                React.createElement(Lb, { t: "Marca" }),
+                                React.createElement("input", { value: insMk, onChange: e => setInsMk(e.target.value), placeholder: "Ex: Harald", style: Object.assign(Object.assign({}, I), { marginBottom: '8px' }) }),
+                                React.createElement(Lb, { t: "Onde Compra" }),
+                                React.createElement("input", { value: insOd, onChange: e => setInsOd(e.target.value), placeholder: "Ex: Mercad\u00E3o", style: Object.assign(Object.assign({}, I), { marginBottom: '8px' }) }),
+                                React.createElement(Lb, { t: "Tamanho *" }),
+                                React.createElement("div", { style: { display: 'flex', gap: '5px', marginBottom: '8px' } },
+                                    React.createElement("input", { type: "number", value: insTm, onChange: e => setInsTm(e.target.value), placeholder: "Ex: 500", step: "0.01", style: Object.assign(Object.assign({}, I), { flex: 1 }) }),
+                                    React.createElement("select", { value: insUn, onChange: e => setInsUn(e.target.value), style: Object.assign(Object.assign({}, I), { width: '70px', flex: 'none' }) }, uns.map(u => React.createElement("option", { key: u, value: u }, u)))),
+                                React.createElement(Lb, { t: "Valor (R$) *" }),
+                                React.createElement("input", { type: "number", value: insVl, onChange: e => setInsVl(e.target.value), placeholder: "0,00", step: "0.01", style: Object.assign(Object.assign({}, I), { marginBottom: '8px' }) }),
+                                React.createElement(Lb, { t: "Data" }),
+                                React.createElement("input", { type: "date", value: insDt, onChange: e => setInsDt(e.target.value), style: Object.assign(Object.assign({}, I), { marginBottom: '8px' }) }),
+                                insVl && insTm && React.createElement("div", { style: { background: `${C.pr}11`, border: `1px solid ${C.pr}33`, borderRadius: '7px', padding: '9px', marginBottom: '8px', textAlign: 'center' } },
+                                    React.createElement("div", { style: { fontSize: '10px', color: C.mt, marginBottom: '3px', textTransform: 'uppercase' } }, "Custo Calculado"),
+                                    React.createElement("div", { style: { fontSize: '16px', fontWeight: '800', color: C.pr } },
+                                        "R$",
+                                        cpg(insVl, insTm, insUn).toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 }),
+                                        React.createElement("span", { style: { fontSize: '10px', color: C.mt } },
+                                            "/",
+                                            lub(insUn)))),
+                                React.createElement("button", { onClick: addIns, style: Object.assign(Object.assign({}, B(C.pr)), { width: '100%' }) }, "+ Cadastrar")),
+                            React.createElement("div", { style: Object.assign({}, K) },
+                                React.createElement("div", { style: { fontSize: '12px', fontWeight: '700', color: C.tx, marginBottom: '10px' } },
+                                    "Insumos (",
+                                    insFl.length,
+                                    ")"),
+                                insFl.length === 0 ? React.createElement("div", { style: { textAlign: 'center', padding: '40px', color: C.mt } },
+                                    React.createElement("div", { style: { fontSize: '30px', marginBottom: '8px' } }, "\uD83E\uDDEA"),
+                                    "Nenhum insumo cadastrado.") : (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: '9px', maxHeight: '560px', overflowY: 'auto' } }, insFl.map(ins => {
+                                    const cB = cpg(ins.valor, ins.tamanho, ins.unidade);
+                                    const uB = lub(ins.unidade);
+                                    return (React.createElement("div", { key: ins.id, style: { background: C.s2, borderRadius: '9px', padding: '13px', border: `1px solid ${C.bd}` } },
+                                        React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '10px' } },
+                                            React.createElement("div", null,
+                                                React.createElement("div", { style: { fontSize: '13px', fontWeight: '700', color: C.tx } }, ins.nome),
+                                                React.createElement("div", { style: { fontSize: '10px', color: C.mt, marginTop: '2px' } },
+                                                    ins.marca && React.createElement("span", { style: { color: '#60a5fa' } },
+                                                        "\uD83C\uDFF7\uFE0F",
+                                                        ins.marca),
+                                                    ins.marca && ins.onde && ' · ',
+                                                    ins.onde && `🏪${ins.onde}`)),
+                                            React.createElement("button", { onClick: async () => { await sbDel('insumos', ins.id); setInsumos(insumos.filter(i => i.id !== ins.id)); }, style: { background: `${C.rd}22`, color: C.rd, padding: '4px 7px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '11px' } }, "\u2715")),
+                                        React.createElement("div", { style: { display: 'flex', gap: '7px', marginBottom: '9px' } }, [{ l: 'Embalagem', v: `${ins.tamanho}${ins.unidade}`, c: C.tx, bg: C.s3 }, { l: 'Valor Pago', v: mo(ins.valor), c: '#fbbf24', bg: C.s3 }, { l: `Custo/${uB}`, v: `R$${cB.toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}`, c: C.pr, bg: `${C.pr}15` }].map((m, i) => (React.createElement("div", { key: i, style: { background: m.bg, borderRadius: '6px', padding: '7px 9px', flex: 1, textAlign: 'center', border: i === 2 ? `1px solid ${C.pr}33` : 'none' } },
+                                            React.createElement("div", { style: { fontSize: '9px', color: C.mt, marginBottom: '2px' } }, m.l),
+                                            React.createElement("div", { style: { fontSize: '11px', fontWeight: '700', color: m.c } }, m.v))))),
+                                        React.createElement("div", { style: { background: `${C.bl}0a`, border: `1px solid ${C.bl}22`, borderRadius: '6px', padding: '8px' } },
+                                            React.createElement("div", { style: { fontSize: '9px', color: '#60a5fa', fontWeight: '700', marginBottom: '5px', textTransform: 'uppercase' } }, "\uD83E\uDDEE Calculadora"),
+                                            React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: '7px' } },
+                                                React.createElement("span", { style: { fontSize: '11px', color: C.mt } }, "Se usar"),
+                                                React.createElement("input", { type: "number", placeholder: "0", id: `c-${ins.id}`, min: "0", step: "0.1", style: Object.assign(Object.assign({}, I), { width: '70px', padding: '4px 7px', fontSize: '11px' }), onChange: e => { const q = parseFloat(e.target.value) || 0; const el = document.getElementById(`r-${ins.id}`); if (el)
+                                                        el.textContent = q > 0 ? `= R$${(q * cB).toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}` : ''; } }),
+                                                React.createElement("span", { style: { fontSize: '11px', color: C.mt } }, uB),
+                                                React.createElement("span", { id: `r-${ins.id}`, style: { fontSize: '12px', fontWeight: '800', color: '#4ade80' } })))));
+                                }))))),
+                        abaIns === 'receitas' && React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '280px 1fr', gap: '14px' } },
+                            React.createElement("div", { style: Object.assign(Object.assign({}, K), { height: 'fit-content' }) },
+                                React.createElement("div", { style: { fontSize: '12px', fontWeight: '700', color: C.tx, marginBottom: '12px', paddingBottom: '8px', borderBottom: `1px solid ${C.bd}` } },
+                                    editRec ? '✏️ Editar' : '➕ Nova',
+                                    " Receita"),
+                                React.createElement(Lb, { t: "Nome *" }),
+                                React.createElement("input", { value: recNm, onChange: e => setRecNm(e.target.value), placeholder: "Ex: Brigadeiro Gourmet", style: Object.assign(Object.assign({}, I), { marginBottom: '8px' }) }),
+                                React.createElement(Lb, { t: "Rendimento" }),
+                                React.createElement("div", { style: { display: 'flex', gap: '5px', marginBottom: '12px' } },
+                                    React.createElement("input", { type: "number", value: recRd, onChange: e => setRecRd(e.target.value), placeholder: "Ex: 40", step: "0.1", style: Object.assign(Object.assign({}, I), { flex: 1 }) }),
+                                    React.createElement("select", { value: recUr, onChange: e => setRecUr(e.target.value), style: Object.assign(Object.assign({}, I), { width: '70px', flex: 'none' }) }, ['un', 'g', 'kg', 'mL', 'L'].map(u => React.createElement("option", { key: u, value: u }, u)))),
+                                React.createElement("div", { style: { background: `${C.pr}0a`, border: `1px solid ${C.pr}22`, borderRadius: '8px', padding: '10px', marginBottom: '12px' } },
+                                    React.createElement("div", { style: { fontSize: '10px', fontWeight: '700', color: C.pr, marginBottom: '8px', textTransform: 'uppercase' } }, "+ Ingrediente"),
+                                    React.createElement("div", { style: { display: 'flex', gap: '5px', marginBottom: '6px' } },
+                                        React.createElement("button", { onClick: () => setRecTp('insumo'), style: Object.assign(Object.assign({ flex: 1 }, B(recTp === 'insumo' ? C.pr : C.s3, recTp === 'insumo' ? 'white' : C.mt)), { fontSize: '10px', padding: '5px' }) }, "\uD83E\uDDEA Insumo"),
+                                        React.createElement("button", { onClick: () => setRecTp('receita'), style: Object.assign(Object.assign({ flex: 1 }, B(recTp === 'receita' ? C.ac : C.s3, recTp === 'receita' ? 'white' : C.mt)), { fontSize: '10px', padding: '5px' }) }, "\uD83D\uDCCB Receita")),
+                                    React.createElement("select", { value: recId, onChange: e => setRecId(e.target.value), style: Object.assign(Object.assign({}, I), { marginBottom: '6px', fontSize: '11px' }) },
+                                        React.createElement("option", { value: "" }, "Selecione..."),
+                                        recTp === 'insumo' ? insumos.map(i => React.createElement("option", { key: i.id, value: i.id },
+                                            i.nome,
+                                            i.marca ? ` — ${i.marca}` : '')) : receitas.filter(r => r.id !== editRec).map(r => React.createElement("option", { key: r.id, value: r.id },
+                                            "\uD83D\uDCCB",
+                                            r.nome))),
+                                    React.createElement("div", { style: { display: 'flex', gap: '5px' } },
+                                        React.createElement("input", { type: "number", value: recQt, onChange: e => setRecQt(e.target.value), placeholder: "Qtd", step: "0.1", style: Object.assign(Object.assign({}, I), { flex: 1, fontSize: '11px' }) }),
+                                        React.createElement("button", { onClick: addItRec, style: Object.assign(Object.assign({}, B(C.gn)), { padding: '7px 12px', flexShrink: 0, fontSize: '12px' }) }, "+Add"))),
+                                recIt.length > 0 && React.createElement("div", { style: { marginBottom: '10px' } },
+                                    React.createElement("div", { style: { fontSize: '10px', color: C.mt, fontWeight: '600', marginBottom: '6px', textTransform: 'uppercase' } },
+                                        "Ingredientes (",
+                                        recIt.length,
+                                        ")"),
+                                    React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '150px', overflowY: 'auto' } }, recIt.map(item => React.createElement("div", { key: item.id, style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 8px', background: C.s2, borderRadius: '5px', border: `1px solid ${C.bd}` } },
+                                        React.createElement("div", null,
+                                            React.createElement("div", { style: { fontSize: '11px', fontWeight: '600', color: C.tx } }, item.nome),
+                                            React.createElement("div", { style: { fontSize: '10px', color: C.mt } },
+                                                item.qtd,
+                                                item.unidade,
+                                                "\u00B7",
+                                                React.createElement("span", { style: { color: '#fbbf24' } }, mo(item.custoTotal)))),
+                                        React.createElement("button", { onClick: () => setRecIt(recIt.filter(i => i.id !== item.id)), style: { background: `${C.rd}22`, color: C.rd, padding: '3px 6px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '10px' } }, "\u2715")))),
+                                    React.createElement("div", { style: { marginTop: '7px', padding: '8px', background: `${C.pr}15`, border: `1px solid ${C.pr}33`, borderRadius: '6px', textAlign: 'center' } },
+                                        React.createElement("div", { style: { fontSize: '10px', color: C.mt, marginBottom: '2px', textTransform: 'uppercase' } }, "Custo Total"),
+                                        React.createElement("div", { style: { fontSize: '18px', fontWeight: '800', color: C.pr } }, mo(ctr(recIt))),
+                                        recRd && parseFloat(recRd) > 0 && React.createElement("div", { style: { marginTop: '4px', fontSize: '12px', fontWeight: '700', color: '#fbbf24' } },
+                                            "R$",
+                                            (ctr(recIt) / parseFloat(recRd)).toFixed(4),
+                                            " por ",
+                                            recUr))),
+                                React.createElement("div", { style: { display: 'flex', gap: '6px' } },
+                                    React.createElement("button", { onClick: salRec, style: Object.assign(Object.assign({}, B(C.gn)), { flex: 1 }) }, "\uD83D\uDCBE Salvar"),
+                                    editRec && React.createElement("button", { onClick: () => { setEditRec(null); setRecNm(''); setRecIt([]); setRecRd(''); setRecUr('un'); }, style: Object.assign(Object.assign({}, B(C.s3, C.mt)), { flex: 1 }) }, "Cancelar"))),
+                            React.createElement("div", { style: Object.assign({}, K) },
+                                React.createElement("div", { style: { fontSize: '12px', fontWeight: '700', color: C.tx, marginBottom: '10px' } },
+                                    "Receitas (",
+                                    receitas.length,
+                                    ")"),
+                                receitas.length === 0 ? React.createElement("div", { style: { textAlign: 'center', padding: '40px', color: C.mt } },
+                                    React.createElement("div", { style: { fontSize: '30px', marginBottom: '8px' } }, "\uD83D\uDCCB"),
+                                    "Nenhuma receita cadastrada.") : (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '600px', overflowY: 'auto' } }, receitas.map(rec => {
+                                    const ct = ctr(rec.itens);
+                                    return (React.createElement("div", { key: rec.id, style: { background: C.s2, borderRadius: '9px', padding: '13px', border: `1px solid ${C.bd}` } },
+                                        React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' } },
+                                            React.createElement("div", { style: { fontSize: '13px', fontWeight: '700', color: C.tx } },
+                                                "\uD83D\uDCCB",
+                                                rec.nome),
+                                            React.createElement("div", { style: { display: 'flex', gap: '5px' } },
+                                                React.createElement("button", { onClick: () => { var _a; setEditRec(rec.id); setRecNm(rec.nome); setRecIt(rec.itens); setRecRd(((_a = rec.rendimento) === null || _a === void 0 ? void 0 : _a.toString()) || ''); setRecUr(rec.unidadeRend || 'un'); setAbaIns('receitas'); }, style: { background: `${C.gn}22`, color: C.gn, padding: '4px 8px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '11px' } }, "\u270F\uFE0F"),
+                                                React.createElement("button", { onClick: async () => { await sbDel('receitas', rec.id); setReceitas(receitas.filter(r => r.id !== rec.id)); }, style: { background: `${C.rd}22`, color: C.rd, padding: '4px 8px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '11px' } }, "\u2715"))),
+                                        React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '9px' } }, rec.itens.map(item => {
+                                            const pct = (item.custoTotal / ct * 100).toFixed(1);
+                                            return (React.createElement("div", { key: item.id, style: { padding: '6px 8px', background: C.s3, borderRadius: '5px' } },
+                                                React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', marginBottom: '3px' } },
+                                                    React.createElement("div", { style: { fontSize: '11px', fontWeight: '600', color: C.tx } }, item.nome),
+                                                    React.createElement("div", { style: { display: 'flex', gap: '8px' } },
+                                                        React.createElement("span", { style: { fontSize: '10px', color: C.mt } },
+                                                            item.qtd,
+                                                            item.unidade),
+                                                        React.createElement("span", { style: { fontSize: '11px', fontWeight: '700', color: '#fbbf24' } }, mo(item.custoTotal)),
+                                                        React.createElement("span", { style: { fontSize: '10px', color: C.mt } },
+                                                            pct,
+                                                            "%"))),
+                                                React.createElement("div", { style: { height: '2px', background: C.bd, borderRadius: '2px', overflow: 'hidden' } },
+                                                    React.createElement("div", { style: { height: '100%', width: `${pct}%`, background: '#fbbf24', borderRadius: '2px' } }))));
+                                        })),
+                                        React.createElement("div", { style: { padding: '9px 11px', background: `${C.pr}15`, border: `1px solid ${C.pr}33`, borderRadius: '7px' } },
+                                            React.createElement("div", { style: { display: 'grid', gridTemplateColumns: rec.rendimento > 0 ? '1fr 1fr 1fr' : '1fr', gap: '8px' } },
+                                                React.createElement("div", null,
+                                                    React.createElement("div", { style: { fontSize: '9px', color: C.mt, textTransform: 'uppercase', marginBottom: '2px' } }, "Custo Total"),
+                                                    React.createElement("div", { style: { fontSize: '17px', fontWeight: '800', color: C.pr } }, mo(ct))),
+                                                rec.rendimento > 0 && React.createElement("div", null,
+                                                    React.createElement("div", { style: { fontSize: '9px', color: C.mt, textTransform: 'uppercase', marginBottom: '2px' } }, "Rendimento"),
+                                                    React.createElement("div", { style: { fontSize: '14px', fontWeight: '700', color: '#60a5fa' } },
+                                                        rec.rendimento,
+                                                        rec.unidadeRend)),
+                                                rec.rendimento > 0 && React.createElement("div", null,
+                                                    React.createElement("div", { style: { fontSize: '9px', color: C.mt, textTransform: 'uppercase', marginBottom: '2px' } },
+                                                        "Custo/",
+                                                        rec.unidadeRend),
+                                                    React.createElement("div", { style: { fontSize: '14px', fontWeight: '800', color: '#fbbf24' } }, mo(ct / rec.rendimento)))))));
+                                })))))));
+                })())),
         pedImg && (() => {
             const { p, c } = pedImg;
             const stCor = { 'PEDIDO ABERTO': '#f59e0b', 'PEDIDO COBRADO': '#3b82f6', 'PEDIDO PAGO': '#22c55e' };
@@ -1220,7 +1383,7 @@ function App() {
         })()));
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App, null));
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App,null));
 </script>
 </body>
 </html>
