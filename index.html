@@ -135,7 +135,7 @@ function App() {
     const sbGet = async (tb) => { const r = await fetch(`${SB_URL}/rest/v1/${tb}?select=*&order=id`, { headers: sbH }); return r.json(); };
     const sbUpsert = async (tb, data) => { await fetch(`${SB_URL}/rest/v1/${tb}`, { method: 'POST', headers: Object.assign(Object.assign({}, sbH), { 'Prefer': 'resolution=merge-duplicates,return=representation' }), body: JSON.stringify(data) }); };
     const sbDel = async (tb, id) => { await fetch(SB_URL + '/rest/v1/' + tb + '?id=eq.' + id, { method: 'DELETE', headers: sbH }); };
-    const sbSavePonto = async (pt) => sbUpsert('pontos', { id: pt.id, nome: pt.nome, responsavel: pt.responsavel, telefone: pt.telefone, dia: pt.dia, endereco: pt.endereco, classificacao: pt.classificacao, preco_revenda: JSON.stringify(pt.precoRevenda || {}) });
+    const sbSavePonto = async (p) => sbUpsert('pontos', { id: p.id, nome: p.nome, responsavel: p.responsavel, telefone: p.telefone, dia: p.dia, endereco: p.endereco, classificacao: p.classificacao, preco_revenda: JSON.stringify(p.precoRevenda || {}) });
     const sbSaveVisita = async (v) => sbUpsert('visitas', { id: v.id, ponto_id: v.ponto_id, tipo: v.tipo, data: v.data, qtd: JSON.stringify(v.qtd || {}), vendido: JSON.stringify(v.vendido || {}), total_vendido: v.totalVendido || 0, total_receber: v.totalReceber || 0, pago: v.pago || false });
     const sbSaveBrownie = async (info) => { try {
         const r = await fetch(SB_URL + '/rest/v1/brownie_info?select=id', { headers: sbH });
@@ -178,7 +178,7 @@ function App() {
                     setBrownieInfo(prev => (Object.assign(Object.assign({}, prev), (typeof bi[0].dados === 'string' ? JSON.parse(bi[0].dados) : bi[0].dados))));
             }
             catch (e) {
-                console.warn(e);
+                console.warn('Supabase:', e);
             }
             setPronto(true);
         })();
@@ -1223,8 +1223,8 @@ function App() {
                         notif('⚠️ Informe pelo menos 1 brownie vendido');
                         return;
                     } setVisitas([...visitas, { id: Date.now(), ponto_id: recPt, tipo: 'recolhimento', data: recDt, vendido, totalVendido: tot, totalReceber: tot * PRECO_BROWNIE, pago: false }]); setSobrou({ Brigadeiro: '', Ninho: '', 'Ninho c/ Nutella': '' }); notif(`✅ ${tot} brownies · ${mo(tot * PRECO_BROWNIE)}`); setShowRec(false); };
-                    const marcarPago = async (id) => { const v = visitas.find(v => v.id === id); if (!v)
-                        return; const upd = Object.assign(Object.assign({}, v), { pago: true }); await sbSaveVisita(upd); setVisitas(visitas.map(v => v.id === id ? upd : v)); };
+                    const marcarPago = async (id) => { const vt = visitas.find(v => v.id === id); if (!vt)
+                        return; const upd = Object.assign(Object.assign({}, vt), { pago: true }); sbSaveVisita(upd); setVisitas(visitas.map(v => v.id === id ? upd : v)); };
                     const emEstoque = (pId) => { const ta = visitas.filter(v => v.ponto_id === pId && v.tipo === 'abastecimento').reduce((a, v) => SABORES.reduce((b, s) => (Object.assign(Object.assign({}, b), { [s]: (a[s] || 0) + (v.qtd[s] || 0) })), a), {}); const tv = visitas.filter(v => v.ponto_id === pId && v.tipo === 'recolhimento').reduce((a, v) => SABORES.reduce((b, s) => (Object.assign(Object.assign({}, b), { [s]: (a[s] || 0) + (v.vendido[s] || 0) })), a), {}); return SABORES.reduce((a, s) => (Object.assign(Object.assign({}, a), { [s]: Math.max((ta[s] || 0) - (tv[s] || 0), 0) })), {}); };
                     const totalAb = (pId) => visitas.filter(v => v.ponto_id === pId && v.tipo === 'recolhimento' && !v.pago).reduce((a, v) => a + v.totalReceber, 0);
                     const totalRec = (pId) => visitas.filter(v => v.ponto_id === pId && v.tipo === 'recolhimento' && v.pago).reduce((a, v) => a + v.totalReceber, 0);
