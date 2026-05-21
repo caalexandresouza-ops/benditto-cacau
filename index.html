@@ -89,15 +89,6 @@ function App() {
     const [dashPanel, setDashPanel] = useState(null);
     const [abaIns, setAbaIns] = useState('insumos');
     const [insNm, setInsNm] = useState('');
-    const [insBk, setInsBk] = useState('');
-    const [insExpanded, setInsExpanded] = useState({});
-    const [editIns, setEditIns] = useState(null);
-    const [eiVl, setEiVl] = useState('');
-    const [eiMk, setEiMk] = useState('');
-    const [eiOd, setEiOd] = useState('');
-    const [eiDt, setEiDt] = useState(new Date().toISOString().split('T')[0]);
-    const [eiTm, setEiTm] = useState('');
-    const [eiUn, setEiUn] = useState('g');
     const [insMk, setInsMk] = useState('');
     const [insOd, setInsOd] = useState('');
     const [insVl, setInsVl] = useState('');
@@ -110,6 +101,7 @@ function App() {
     const [recUr, setRecUr] = useState('un');
     const [recIt, setRecIt] = useState([]);
     const [recTp, setRecTp] = useState('insumo');
+    const [recUn, setRecUn] = useState('g');
     const [recId, setRecId] = useState('');
     const [recQt, setRecQt] = useState('');
     const [editRec, setEditRec] = useState(null);
@@ -145,9 +137,21 @@ function App() {
     const [recDt, setRecDt] = useState(new Date().toISOString().split('T')[0]);
     const [showRec, setShowRec] = useState(false);
     const [showAba, setShowAba] = useState(false);
+    const [producoes, setProducoes] = useState([]);
+    const [prodRec, setProdRec] = useState('');
+    const [prodQt, setProdQt] = useState('1');
+    const [insExpanded, setInsExpanded] = useState({});
+    const [insBk, setInsBk] = useState('');
+    const [editIns, setEditIns] = useState(null);
+    const [eiVl, setEiVl] = useState('');
+    const [eiMk, setEiMk] = useState('');
+    const [eiOd, setEiOd] = useState('');
+    const [eiDt, setEiDt] = useState(new Date().toISOString().split('T')[0]);
+    const [eiTm, setEiTm] = useState('');
+    const [eiUn, setEiUn] = useState('g');
     const [showVisita, setShowVisita] = useState(false);
-    const [ptBk, setPtBk] = useState('');
     const [visitaPtId, setVisitaPtId] = useState(null);
+    const [ptBk, setPtBk] = useState('');
     const SB_URL = 'https://nzexjilmwvbwpionpbzk.supabase.co';
     const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56ZXhqaWxtd3Zid3Bpb25wYnprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MDI3NzUsImV4cCI6MjA5NDE3ODc3NX0.br90esj5yC_QAFfFWCQ-uzf218AhHpvazqdU5qtU6sw';
     const sbH = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
@@ -464,7 +468,8 @@ function App() {
             if (!rec)
                 return;
             const ct = ctr(rec.itens);
-            item = { id: Date.now(), tipo: 'receita', refId: rec.id, nome: `📋${rec.nome}`, qtd: q, unidade: 'porção', custoPorBase: ct, custoTotal: ct * q };
+            const custoBase = rec.rendimento > 0 ? (recUn === 'un' ? ct : ct / rec.rendimento) : ct;
+            item = { id: Date.now(), tipo: 'receita', refId: rec.id, nome: '📋'+rec.nome, qtd: q, unidade: recUn, custoPorBase: custoBase, custoTotal: custoBase * q };
         }
         if (recIt.some(i => i.refId === item.refId && i.tipo === item.tipo)) {
             notif('⚠️ Já adicionado!');
@@ -473,6 +478,7 @@ function App() {
         setRecIt([...recIt, item]);
         setRecId('');
         setRecQt('');
+        setRecUn('g');
     };
     const salRec = async () => {
         if (!recNm.trim() || recIt.length === 0) {
@@ -592,6 +598,44 @@ function App() {
                     const totalCob = pFoco.filter(p => p.status === 'PEDIDO COBRADO').reduce((a, p) => a + p.total, 0);
                     const totalPag = pFoco.filter(p => p.status === 'PEDIDO PAGO').reduce((a, p) => a + p.total, 0);
                     const semPagar = [...new Set(pFoco.filter(p => p.status !== 'PEDIDO PAGO').map(p => p.cliente_id))].length;
+                    const totalFat = totalRec + totalCob + totalPag;
+                    const totalCusto = pFoco.reduce(function(acc,p){ return acc+(p.itens||[]).reduce(function(a,it){ var pr=produtos.find(function(x){ return x.nome===it.nome_produto; }); return a+((pr&&pr.custo?parseFloat(pr.custo):0)*it.quantidade); },0); },0);
+                    const lucroEst = totalFat - totalCusto;
+                    const margemEst = totalFat > 0 ? (lucroEst/totalFat*100) : 0;
+                    const ticketMedio = pFoco.length > 0 ? totalFat/pFoco.length : 0;
+                    const mesAtual = mes==='todos' ? new Date().toISOString().slice(0,7) : mes;
+                    const _ma = mesAtual.split('-').map(Number); var moAntes=_ma[1]-1, yrAntes=_ma[0]; if(moAntes<=0){moAntes+=12;yrAntes--;}
+                    const mesAnt = yrAntes+'-'+String(moAntes).padStart(2,'0');
+                    const pAnt = pedidos.filter(function(p){ return ma(p.data_primeira_compra)===mesAnt; });
+                    const fatAnt = pAnt.reduce(function(a,p){ return a+p.total; },0);
+                    const varFat = fatAnt>0 ? ((totalFat-fatAnt)/fatAnt*100) : null;
+                    const pagAnt = pAnt.filter(function(p){ return p.status==='PEDIDO PAGO'; }).reduce(function(a,p){ return a+p.total; },0);
+                    const varPag = pagAnt>0 ? ((totalPag-pagAnt)/pagAnt*100) : null;
+
+    const registrarProducao = function(){
+        if(!prodRec || !prodQt) { notif('Selecione a receita e a quantidade'); return; }
+        var rec = receitas.find(function(r){ return r.id===parseInt(prodRec); });
+        if(!rec) return;
+        var prod = { id: Date.now(), receitaId: rec.id, receitaNome: rec.nome, qtd: parseFloat(prodQt)||1, data: new Date().toISOString().split('T')[0] };
+        setProducoes(function(prev){ return prev.concat([prod]); });
+        notif('Producao de '+prod.qtd+'x '+rec.nome+' registrada!');
+        setProdRec(''); setProdQt('1');
+    };
+    const estoqueInsumo = function(insId){
+        var ins = insumos.find(function(i){ return i.id===insId; });
+        if(!ins) return 0;
+        var totalComprado = (ins.historico||[]).reduce(function(a,hh){ return a+(parseFloat(hh.tamanho)||0); },0);
+        var totalUsado = producoes.reduce(function(acc,p){
+            var rec = receitas.find(function(r){ return r.id===p.receitaId; });
+            if(!rec) return acc;
+            var item = (rec.itens||[]).find(function(it){ return it.tipo==='insumo' && it.refId===insId; });
+            if(!item) return acc;
+            return acc + (item.qtd * p.qtd);
+        }, 0);
+        return Math.max(0, totalComprado - totalUsado);
+    };
+    const hj = new Date();
+                    const sumidos = clientes.filter(function(c){ var up=pedidos.filter(function(p){ return p.cliente_id===c.id; }).sort(function(a,b){ return new Date(b.data_primeira_compra)-new Date(a.data_primeira_compra); })[0]; if(!up) return false; return (hj-new Date(up.data_primeira_compra))/(1000*60*60*24)>21; });
                     const u6 = [];
                     for (let i = 5; i >= 0; i--) {
                         const [a, m] = mes.split('-').map(Number);
@@ -616,6 +660,10 @@ function App() {
                         vC[p.cliente_id] = 0; vC[p.cliente_id] += p.total; });
                     const topC = Object.entries(vC).sort((a, b) => b[1] - a[1]).slice(0, 10);
                     const maxC = ((_c = topC[0]) === null || _c === void 0 ? void 0 : _c[1]) || 1;
+                    var sabNames = ['Brigadeiro', 'Ninho', 'Ninho c/ Nutella'];
+                    var sabCores2 = ['#c0392b', '#f59e0b', '#8b5cf6'];
+                    var sabQtd = sabNames.map(function(s){ return (vD[s]||{qtd:0}).qtd; });
+                    var sabTot = sabQtd.reduce(function(a,b){ return a+b; }, 0);
                     const cores = ['#c0392b', '#e74c3c', '#e67e22', '#f39c12', '#27ae60', '#2980b9'];
                     return (React.createElement("div", null,
                         mes === 'todos' && !dashMes && React.createElement("div", { style: { marginBottom: '12px', padding: '9px 14px', background: `${C.pr}15`, border: `1px solid ${C.pr}44`, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
@@ -652,9 +700,38 @@ function App() {
                                 React.createElement("div", { style: { display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '6px' } }, [{ l: 'No Mês', v: mo(totM), c: '#60a5fa' }, { l: 'Histórico', v: mo(totG), c: '#4ade80' }, { l: 'Pedidos', v: pC.length, c: C.ac }].map((m, i) => React.createElement("div", { key: i, style: { background: C.s2, padding: '8px', borderRadius: '6px', textAlign: 'center' } },
                                     React.createElement("div", { style: { fontSize: '10px', color: C.mt, marginBottom: '2px' } }, m.l),
                                     React.createElement("div", { style: { fontSize: '12px', fontWeight: '800', color: m.c } }, m.v)))))); })()),
-                        React.createElement("div", { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(110px,1fr))', gap: '8px', marginBottom: '14px' } }, [{ l: 'A Receber', v: mo(totalRec), c: '#f87171', bg: '#f8717115' }, { l: 'Cobrado', v: mo(totalCob), c: '#fbbf24', bg: '#fbbf2415' }, { l: 'Recebido', v: mo(totalPag), c: '#4ade80', bg: '#4ade8015' }, { l: 'Sem Pagar', v: semPagar, c: '#f87171', bg: '#f8717115' }, { l: 'Pedidos', v: pFoco.length, c: '#60a5fa', bg: '#60a5fa15' }, { l: 'Clientes', v: clientes.length, c: C.ac, bg: `${C.ac}15` }].map((m, i) => (React.createElement("div", { key: i, style: { background: m.bg, borderRadius: '9px', padding: '11px', border: `1px solid ${m.c}33` } },
+                        React.createElement("div", { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(110px,1fr))', gap: '8px', marginBottom: '14px' } }, [{ l: 'A Receber', v: mo(totalRec), c: '#f87171', bg: '#f8717115', vr: varFat }, { l: 'Recebido', v: mo(totalPag), c: '#4ade80', bg: '#4ade8015', vr: varPag }, { l: 'Ticket Medio', v: mo(ticketMedio), c: '#60a5fa', bg: '#60a5fa15', vr: null }, { l: 'Sem Pagar', v: semPagar+' cli', c: '#f87171', bg: '#f8717115', vr: null }, { l: 'Pedidos', v: pFoco.length, c: C.ac, bg: C.ac+'15', vr: null }].map(function(m,i){ return React.createElement("div", { key: i, style: { background: m.bg, borderRadius: '9px', padding: '11px', border: '1px solid '+m.c+'33' } },
                             React.createElement("div", { style: { fontSize: '9px', color: C.mt, textTransform: 'uppercase', marginBottom: '3px' } }, m.l),
-                            React.createElement("div", { style: { fontSize: '18px', fontWeight: '800', color: m.c } }, m.v))))),
+                            React.createElement("div", { style: { fontSize: '18px', fontWeight: '800', color: m.c } }, m.v),
+                            m.vr !== null && React.createElement("div", { style: { fontSize: '10px', fontWeight: '700', color: m.vr>=0?'#4ade80':'#f87171', marginTop: '2px' } }, m.vr>=0?'▲':'▼', ' ', Math.abs(m.vr).toFixed(1), '% vs ant.')); })),
+                        React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' } },
+                            React.createElement("div", { style: { background: lucroEst>=0?'#4ade8011':'#f8717111', border: '1px solid '+(lucroEst>=0?'#4ade8033':'#f8717133'), borderRadius: '9px', padding: '12px' } },
+                                React.createElement("div", { style: { fontSize: '9px', color: C.mt, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' } }, 'Lucro estimado'),
+                                React.createElement("div", { style: { fontSize: '22px', fontWeight: '800', color: lucroEst>=0?'#4ade80':'#f87171' } }, mo(lucroEst)),
+                                React.createElement("div", { style: { fontSize: '10px', color: C.mt, marginTop: '3px' } }, 'Margem: ', React.createElement('strong', { style: { color: lucroEst>=0?'#4ade80':'#f87171' } }, margemEst.toFixed(1)+'%'))),
+                            React.createElement("div", { onClick: sumidos.length>0 ? function(){ setDashPanel('sumidos'); setDashMes(null); } : undefined, style: { background: sumidos.length>0?'#f8717111':'#4ade8011', border: '1px solid '+(sumidos.length>0?'#f8717133':'#4ade8033'), borderRadius: '9px', padding: '12px', cursor: sumidos.length>0?'pointer':'default' } },
+                                React.createElement("div", { style: { fontSize: '9px', color: C.mt, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' } }, 'Clientes sumidos +21 dias'),
+                                React.createElement("div", { style: { fontSize: '22px', fontWeight: '800', color: sumidos.length>0?'#f87171':'#4ade80' } }, sumidos.length),
+                                React.createElement("div", { style: { fontSize: '10px', marginTop: '3px', color: sumidos.length>0?'#f87171':'#4ade80' } }, sumidos.length>0?'Toque para ver →':'Todos ativos!'))),
+                        (function(){
+                            if(!pontos.length) return null;
+                            var mesPts = mes==='todos' ? new Date().toISOString().slice(0,7) : mes;
+                            var totalCampo = pontos.reduce(function(acc,pt){ var e=emEstoque(pt.id); return acc+SABORES.reduce(function(a,s){ return a+(e[s]||0); },0); },0);
+                            var vendMes = visitas.filter(function(v){ return v.tipo==='recolhimento'&&(v.data||'').slice(0,7)===mesPts; }).reduce(function(a,v){ return a+(v.totalVendido||0); },0);
+                            var topPto = pontos.map(function(pt){ var vd=visitas.filter(function(v){ return v.ponto_id===pt.id&&v.tipo==='recolhimento'&&(v.data||'').slice(0,7)===mesPts; }).reduce(function(a,v){ return a+(v.totalVendido||0); },0); return {nome:pt.nome,vd:vd}; }).sort(function(a,b){ return b.vd-a.vd; })[0];
+                            return React.createElement("div", { style: Object.assign({}, K, { marginBottom: '12px' }) },
+                                React.createElement("div", { style: { fontSize: '12px', fontWeight: '700', color: C.tx, marginBottom: '10px' } }, "     Pontos de Venda"),
+                                React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: '7px' } },
+                                    React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#60a5fa11', borderRadius: '8px', border: '1px solid #60a5fa33' } },
+                                        React.createElement("span", { style: { fontSize: '11px', color: C.mt } }, "No campo agora"),
+                                        React.createElement("span", { style: { fontSize: '16px', fontWeight: '800', color: '#60a5fa' } }, totalCampo+" brownies")),
+                                    React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#4ade8011', borderRadius: '8px', border: '1px solid #4ade8033' } },
+                                        React.createElement("span", { style: { fontSize: '11px', color: C.mt } }, "Vendidos no mês"),
+                                        React.createElement("span", { style: { fontSize: '16px', fontWeight: '800', color: '#4ade80' } }, vendMes+" un · "+mo(vendMes*PRECO_BROWNIE))),
+                                    topPto&&topPto.vd>0 && React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: C.pr+'11', borderRadius: '8px', border: '1px solid '+C.pr+'33' } },
+                                        React.createElement("span", { style: { fontSize: '11px', color: C.mt } }, "     Melhor ponto"),
+                                        React.createElement("span", { style: { fontSize: '13px', fontWeight: '700', color: C.pr } }, topPto.nome+" · "+topPto.vd+"un"))));
+                        })(),
                         React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' } },
                             React.createElement("div", { style: Object.assign({}, K) },
                                 React.createElement("div", { style: { fontSize: '12px', fontWeight: '700', color: C.tx, marginBottom: '3px' } }, "\uD83D\uDCC8 Faturamento \u2014 clique"),
@@ -719,6 +796,14 @@ function App() {
                                     React.createElement("div", { style: { height: '4px', background: C.s3, borderRadius: '3px', overflow: 'hidden' } },
                                         React.createElement("div", { style: { height: '100%', width: `${(tot / maxC) * 100}%`, background: cor, borderRadius: '3px' } })))); })))));
                 })(),
+                                dashPanel === 'sumidos' && React.createElement('div', null,
+                                    React.createElement('div', { style: { fontSize: '11px', fontWeight: '700', color: '#f87171', marginBottom: '10px' } }, sumidos.length+' cliente(s) sem comprar ha mais de 21 dias'),
+                                    React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '200px', overflowY: 'auto' } },
+                                        sumidos.slice().sort(function(a,b){ var pA=pedidos.filter(function(p){ return p.cliente_id===a.id; }).sort(function(x,y){ return new Date(y.data_primeira_compra)-new Date(x.data_primeira_compra); })[0]; var pB=pedidos.filter(function(p){ return p.cliente_id===b.id; }).sort(function(x,y){ return new Date(y.data_primeira_compra)-new Date(x.data_primeira_compra); })[0]; if(!pA||!pB) return 0; return new Date(pA.data_primeira_compra)-new Date(pB.data_primeira_compra); })
+                                        .map(function(c){ var up=pedidos.filter(function(p){ return p.cliente_id===c.id; }).sort(function(x,y){ return new Date(y.data_primeira_compra)-new Date(x.data_primeira_compra); })[0]; var dias=Math.floor((hj-new Date(up.data_primeira_compra))/(1000*60*60*24)); return React.createElement('div',{key:c.id,style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'7px 9px',background:C.s2,borderRadius:'7px',border:'1px solid '+C.bd}},
+                                            React.createElement('div',null,React.createElement('div',{style:{fontSize:'12px',fontWeight:'700',color:C.tx}},c.nome),React.createElement('div',{style:{fontSize:'10px',color:dias>45?'#f87171':'#fbbf24'}},dias+' dias sem comprar')),
+                                            React.createElement('a',{href:'https://wa.me/55'+c.telefone.replace(/\D/g,''),target:'_blank',style:{background:'#25d36622',color:'#25d366',padding:'5px 10px',borderRadius:'6px',textDecoration:'none',fontSize:'11px',fontWeight:'700',border:'1px solid #25d36644'}},'WA')); }))),
+
                 aba === 'clientes' && React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '260px 1fr', gap: '14px' } },
                     React.createElement("div", { style: Object.assign({}, K) },
                         React.createElement("div", { style: { fontSize: '12px', fontWeight: '700', color: C.tx, marginBottom: '12px', paddingBottom: '8px', borderBottom: `1px solid ${C.bd}` } }, "Novo Cliente"),
@@ -1090,7 +1175,7 @@ function App() {
                         if (!rec)
                             return;
                         const ct = ctr(rec.itens);
-                        item = { id: Date.now(), tipo: 'receita', refId: rec.id, nome: `📋${rec.nome}`, qtd: q, unidade: 'porção', custoPorBase: ct, custoTotal: ct * q };
+                        const custoBase2 = rec.rendimento > 0 ? (recUn === 'un' ? ct : ct / rec.rendimento) : ct; item = { id: Date.now(), tipo: 'receita', refId: rec.id, nome: '📋'+rec.nome, qtd: q, unidade: recUn, custoPorBase: custoBase2, custoTotal: custoBase2 * q };
                     } if (recIt.some(i => i.refId === item.refId && i.tipo === item.tipo)) {
                         notif('⚠️ Já adicionado!');
                         return;
@@ -1098,14 +1183,14 @@ function App() {
                     const addIns = async () => { if (!insNm.trim() || !insVl || !insTm) {
                         notif('⚠️ Preencha nome, valor e tamanho');
                         return;
-                    } const h = [{ data: insDt, valor: parseFloat(insVl), tamanho: parseFloat(insTm), unidade: insUn, onde: insOd, marca: insMk }]; const novo = { id: Date.now(), nome: insNm.trim(), marca: insMk, onde: insOd, valor: parseFloat(insVl), tamanho: parseFloat(insTm), unidade: insUn, data: insDt, obs: insOb, historico: h }; setInsumos([...insumos, novo]); setInsNm(''); setInsMk(''); setInsOd(''); setInsVl(''); setInsTm(''); notif('✅ Insumo cadastrado!'); try { await sbUpsert('insumos', Object.assign(Object.assign({}, novo), { historico: JSON.stringify(novo.historico) })); } catch(e) {} };
+                    } const h = [{ data: insDt, valor: parseFloat(insVl), tamanho: parseFloat(insTm), unidade: insUn, onde: insOd, marca: insMk }]; const novo = { id: Date.now(), nome: insNm.trim(), marca: insMk, onde: insOd, valor: parseFloat(insVl), tamanho: parseFloat(insTm), unidade: insUn, data: insDt, obs: insOb, historico: h }; await sbUpsert('insumos', Object.assign(Object.assign({}, novo), { historico: JSON.stringify(novo.historico) })); setInsumos([...insumos, novo]); setInsNm(''); setInsMk(''); setInsOd(''); setInsVl(''); setInsTm(''); notif('✅ Insumo cadastrado!'); };
                     const salRec = async () => { if (!recNm.trim() || recIt.length === 0) {
                         notif('⚠️ Nome e ingredientes obrigatórios');
                         return;
                     } const obj = { nome: recNm.trim(), itens: recIt, rendimento: parseFloat(recRd) || 0, unidadeRend: recUr, unidade_rend: recUr }; if (editRec) {
                         const upd = Object.assign(Object.assign({}, receitas.find(r => r.id === editRec)), obj);
+                        await sbUpsert('receitas', Object.assign(Object.assign({}, upd), { itens: JSON.stringify(upd.itens) }));
                         setReceitas(receitas.map(r => r.id === editRec ? upd : r));
-                        try { await sbUpsert('receitas', Object.assign(Object.assign({}, upd), { itens: JSON.stringify(upd.itens) })); } catch(e) {}
                     }
                     else {
                         const novo = Object.assign(Object.assign({ id: Date.now() }, obj), { criadoEm: new Date().toISOString(), criado_em: new Date().toISOString() });
@@ -1130,7 +1215,7 @@ function App() {
                                 React.createElement(Lb, { t: "Marca" }),
                                 React.createElement("input", { value: insMk, onChange: e => setInsMk(e.target.value), placeholder: "Ex: Harald", style: Object.assign(Object.assign({}, I), { marginBottom: '8px' }) }),
                                 React.createElement(Lb, { t: "Onde Compra" }),
-                                React.createElement("input", { value: insOd, onChange: e => setInsOd(e.target.value), placeholder: "Ex: Mercadao", style: Object.assign(Object.assign({}, I), { marginBottom: '8px' }) }),
+                                React.createElement("input", { value: insOd, onChange: e => setInsOd(e.target.value), placeholder: "Ex: Mercad\u00E3o", style: Object.assign(Object.assign({}, I), { marginBottom: '8px' }) }),
                                 React.createElement(Lb, { t: "Tamanho *" }),
                                 React.createElement("div", { style: { display: 'flex', gap: '5px', marginBottom: '8px' } },
                                     React.createElement("input", { type: "number", value: insTm, onChange: e => setInsTm(e.target.value), placeholder: "Ex: 500", step: "0.01", style: Object.assign(Object.assign({}, I), { flex: 1 }) }),
@@ -1148,14 +1233,14 @@ function App() {
                                         cpg(insVl, insTm, insUn).toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 }))),
                                 React.createElement("button", { onClick: addIns, style: Object.assign(Object.assign({}, B(C.pr)), { width: '100%' }) }, "+ Cadastrar")),
                             React.createElement("div", { style: Object.assign({}, K) },
-                                React.createElement("div", null,
-                                    React.createElement("div", { style: { fontSize: '12px', fontWeight: '700', color: C.tx, marginBottom: '8px' } },
-                                        "Insumos (", insFl.length, ")"),
-                                    React.createElement("input", { placeholder: "🔍 Buscar insumo...", value: insBk, onChange: e => setInsBk(e.target.value), style: Object.assign({}, I, { marginBottom: '10px', fontSize: '12px', padding: '7px 10px' }) })),
+                                React.createElement("div", { style: { fontSize: '12px', fontWeight: '700', color: C.tx, marginBottom: '10px' } },
+                                    "Insumos (",
+                                    insFl.length,
+                                    ")"),
                                 insFl.length === 0 ? React.createElement("div", { style: { textAlign: 'center', padding: '40px', color: C.mt } },
                                     React.createElement("div", { style: { fontSize: '30px', marginBottom: '8px' } }, "\uD83E\uDDEA"),
                                     "Nenhum insumo cadastrado.") :
-                                    React.createElement("div", { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: '9px', maxHeight: '620px', overflowY: 'auto', alignItems: 'start' } }, insFl.filter(ins => !insBk.trim() || ins.nome.toLowerCase().includes(insBk.toLowerCase()) || (ins.marca||"").toLowerCase().includes(insBk.toLowerCase())).map(ins => {
+                                    React.createElement("div", { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: '9px', maxHeight: '620px', overflowY: 'auto', alignItems: 'start' } }, insFl.filter(function(ins){ return !insBk.trim() || ins.nome.toLowerCase().includes(insBk.toLowerCase()); }).map(ins => {
                                         const cB = cpg(ins.valor, ins.tamanho, ins.unidade);
                                         const uB = lub(ins.unidade);
                                         return (React.createElement("div", { key: ins.id, style: { background: C.s2, borderRadius: '9px', padding: '13px', border: `1px solid ${C.bd}` } },
@@ -1168,10 +1253,7 @@ function App() {
                                                             ins.marca),
                                                         ins.marca && ins.onde && ' · ',
                                                         ins.onde && `🏪${ins.onde}`)),
-                                                React.createElement("div", { style: { display: 'flex', gap: '5px' } },
-                                                    React.createElement("button", { onClick: () => { setEditIns(ins.id); setEiVl(ins.valor.toString()); setEiMk(ins.marca||''); setEiOd(ins.onde||''); setEiDt(new Date().toISOString().split('T')[0]); setEiTm(ins.tamanho.toString()); setEiUn(ins.unidade); }, style: { background: C.gn + '22', color: C.gn, padding: '4px 8px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '11px' } }, "\u270F\uFE0F Nova compra"),
-                                                    React.createElement("button", { onClick: function(){ setInsExpanded(function(p){ return Object.assign({}, p, {[ins.id]: !p[ins.id]}); }); }, style: { background: insExpanded[ins.id] ? '#8b5cf622' : C.s3, color: insExpanded[ins.id] ? '#8b5cf6' : C.mt, padding: '4px 8px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '11px' } }, insExpanded[ins.id] ? "▲ Hist." : "▼ Hist."),
-                                                    React.createElement("button", { onClick: async () => { await sbDel('insumos', ins.id); setInsumos(insumos.filter(i => i.id !== ins.id)); }, style: { background: `${C.rd}22`, color: C.rd, padding: '4px 7px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '11px' } }, "\u2715"))),
+                                                React.createElement("button", { onClick: async () => { await sbDel('insumos', ins.id); setInsumos(insumos.filter(i => i.id !== ins.id)); }, style: { background: `${C.rd}22`, color: C.rd, padding: '4px 7px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '11px' } }, "\u2715")),
                                             React.createElement("div", { style: { display: 'flex', gap: '7px', marginBottom: '9px' } }, [{ l: 'Embalagem', v: `${ins.tamanho}${ins.unidade}`, c: C.tx, bg: C.s3 }, { l: 'Valor Pago', v: mo(ins.valor), c: '#fbbf24', bg: C.s3 }, { l: `Custo/${uB}`, v: `R$${cB.toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}`, c: C.pr, bg: `${C.pr}15` }].map((m, i) => (React.createElement("div", { key: i, style: { background: m.bg, borderRadius: '6px', padding: '7px 9px', flex: 1, textAlign: 'center', border: i === 2 ? `1px solid ${C.pr}33` : 'none' } },
                                                 React.createElement("div", { style: { fontSize: '9px', color: C.mt, marginBottom: '2px' } }, m.l),
                                                 React.createElement("div", { style: { fontSize: '11px', fontWeight: '700', color: m.c } }, m.v))))),
@@ -1182,26 +1264,8 @@ function App() {
                                                     React.createElement("input", { type: "number", placeholder: "0", id: `c-${ins.id}`, min: "0", step: "0.1", style: Object.assign(Object.assign({}, I), { width: '70px', padding: '4px 7px', fontSize: '11px' }), onChange: e => { const q = parseFloat(e.target.value) || 0; const el = document.getElementById(`r-${ins.id}`); if (el)
                                                             el.textContent = q > 0 ? `= R$${(q * cB).toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}` : ''; } }),
                                                     React.createElement("span", { style: { fontSize: '11px', color: C.mt } }, uB),
-                                                    React.createElement("span", { id: `r-${ins.id}`, style: { fontSize: '12px', fontWeight: '800', color: '#4ade80' } })),
-                                            insExpanded[ins.id] && (() => {
-                                                const hist = (ins.historico && ins.historico.length > 0) ? [...ins.historico].reverse() : [];
-                                                if (hist.length === 0) return React.createElement("div", { style: { marginTop: '10px', fontSize: '11px', color: C.mt, textAlign: 'center', padding: '10px' } }, "Sem histórico de compras.");
-                                                return React.createElement("div", { style: { marginTop: '10px', borderTop: `1px solid ${C.bd}`, paddingTop: '10px' } },
-                                                    React.createElement("div", { style: { fontSize: '10px', fontWeight: '700', color: '#8b5cf6', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '1px' } }, "📊 Histórico de Compras"),
-                                                    React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: '5px' } },
-                                                        hist.map((e, idx) => {
-                                                            const cAtual = cpg(e.valor, e.tamanho, e.unidade);
-                                                            const cAnt = idx < hist.length - 1 ? cpg(hist[idx+1].valor, hist[idx+1].tamanho, hist[idx+1].unidade) : null;
-                                                            const vari = cAnt ? ((cAtual - cAnt) / cAnt * 100) : null;
-                                                            return React.createElement("div", { key: idx, style: { background: idx === 0 ? '#8b5cf611' : C.s3, border: idx === 0 ? '1px solid #8b5cf633' : `1px solid ${C.bd}`, borderRadius: '7px', padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
-                                                                React.createElement("div", null,
-                                                                    React.createElement("div", { style: { fontSize: '10px', color: C.mt } }, e.data || '—', e.marca ? ` · ${e.marca}` : '', e.onde ? ` · ${e.onde}` : ''),
-                                                                    React.createElement("div", { style: { fontSize: '12px', fontWeight: '700', color: C.tx } }, mo(e.valor), " / ", e.tamanho, e.unidade)),
-                                                                React.createElement("div", { style: { textAlign: 'right' } },
-                                                                    React.createElement("div", { style: { fontSize: '13px', fontWeight: '800', color: idx === 0 ? '#8b5cf6' : C.pr } }, "R$", cAtual.toFixed(4), "/", lub(e.unidade)),
-                                                                    vari !== null && React.createElement("div", { style: { fontSize: '10px', fontWeight: '700', color: vari > 0 ? '#f87171' : '#4ade80' } }, vari > 0 ? '▲' : '▼', ' ', Math.abs(vari).toFixed(1), "%")));
-                                                        })));
-                                            })())));
+                                                    React.createElement("span", { id: `r-${ins.id}`, style: { fontSize: '12px', fontWeight: '800', color: '#4ade80' } }),
+                                            (function(){ var totalC=(ins.historico||[]).reduce(function(a,hh){ return a+(parseFloat(hh.tamanho)||0); },0); var totalU=producoes.reduce(function(acc,p){ var rec=receitas.find(function(r){ return r.id===p.receitaId; }); if(!rec) return acc; var it=(rec.itens||[]).find(function(x){ return x.tipo==='insumo'&&x.refId===ins.id; }); if(!it) return acc; return acc+it.qtd*p.qtd; },0); var est=Math.max(0,totalC-totalU); return React.createElement("div",{style:{fontSize:'9px',color:C.mt,marginTop:'2px'}},"Estoque: ",React.createElement("strong",{style:{color:est>0?'#4ade80':'#f87171'}},est.toFixed(0)+lub(ins.unidade))); })()))));
                                     })))),
                         abaIns === 'receitas' && React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '280px 1fr', gap: '14px' } },
                             React.createElement("div", { style: Object.assign(Object.assign({}, K), { height: 'fit-content' }) },
@@ -1228,6 +1292,9 @@ function App() {
                                             r.nome))),
                                     React.createElement("div", { style: { display: 'flex', gap: '5px' } },
                                         React.createElement("input", { type: "number", value: recQt, onChange: e => setRecQt(e.target.value), placeholder: "Qtd", step: "0.1", style: Object.assign(Object.assign({}, I), { flex: 1, fontSize: '11px' }) }),
+                                        recTp === 'receita' && React.createElement("select", { value: recUn, onChange: function(e){ setRecUn(e.target.value); }, style: Object.assign(Object.assign({}, I), { width: '60px', fontSize: '11px', padding: '7px 4px' }) },
+                                            React.createElement("option", { value: "g" }, "g"),
+                                            React.createElement("option", { value: "un" }, "un")),
                                         React.createElement("button", { onClick: addItRec, style: Object.assign(Object.assign({}, B(C.gn)), { padding: '7px 12px', flexShrink: 0, fontSize: '12px' }) }, "+Add"))),
                                 recIt.length > 0 && React.createElement("div", { style: { marginBottom: '10px' } },
                                     React.createElement("div", { style: { fontSize: '10px', color: C.mt, fontWeight: '600', marginBottom: '6px', textTransform: 'uppercase' } },
@@ -1270,7 +1337,7 @@ function App() {
                                                     "\uD83D\uDCCB",
                                                     rec.nome),
                                                 React.createElement("div", { style: { display: 'flex', gap: '5px' } },
-                                                    React.createElement("button", { onClick: () => { var _a; setEditRec(rec.id); setRecNm(rec.nome); setRecIt(rec.itens); setRecRd(((_a = rec.rendimento) === null || _a === void 0 ? void 0 : _a.toString()) || ''); setRecUr(rec.unidadeRend || 'un'); setAbaIns('receitas'); }, style: { background: C.gn + '22', color: C.gn, padding: '4px 8px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '11px' } }, "\u270F\uFE0F"),
+                                                    React.createElement("button", { onClick: () => { var _a; setEditRec(rec.id); setRecNm(rec.nome); setRecIt(rec.itens); setRecRd(((_a = rec.rendimento) === null || _a === void 0 ? void 0 : _a.toString()) || ''); setRecUr(rec.unidadeRend || 'un'); setAbaIns('receitas'); }, style: { background: `${C.gn}22`, color: C.gn, padding: '4px 8px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '11px' } }, "\u270F\uFE0F"),
                                                     React.createElement("button", { onClick: async () => { await sbDel('receitas', rec.id); setReceitas(receitas.filter(r => r.id !== rec.id)); }, style: { background: `${C.rd}22`, color: C.rd, padding: '4px 8px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '11px' } }, "\u2715"))),
                                             React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '9px' } }, rec.itens.map(item => {
                                                 const pct = (item.custoTotal / ct * 100).toFixed(1);
@@ -1329,29 +1396,6 @@ function App() {
                         notif('⚠️ Informe pelo menos 1 brownie vendido');
                         return;
                     } setVisitas([...visitas, { id: Date.now(), ponto_id: recPt, tipo: 'recolhimento', data: recDt, vendido, totalVendido: tot, totalReceber: tot * PRECO_BROWNIE, pago: false }]); setSobrou({ Brigadeiro: '', Ninho: '', 'Ninho c/ Nutella': '' }); notif(`✅ ${tot} brownies · ${mo(tot * PRECO_BROWNIE)}`); setShowRec(false); };
-                    const registrarVisita = () => {
-                        if (!visitaPtId) { notif('Ponto nao selecionado'); return; }
-                        var estq = emEstoque(visitaPtId);
-                        var temEstoque = SABORES.some(function(s){ return (estq[s]||0) > 0; });
-                        var totVendido = SABORES.reduce(function(a,s){ return a+(parseInt(sobrou[s])||0); }, 0);
-                        var totEntrega = SABORES.reduce(function(a,s){ return a+(parseInt(abaQt[s])||0); }, 0);
-                        if (!temEstoque && totEntrega === 0) { notif('Informe a nova entrega'); return; }
-                        var novos = [];
-                        if (temEstoque && totVendido > 0) {
-                            var vendido = {}; SABORES.forEach(function(s){ vendido[s] = parseInt(sobrou[s])||0; });
-                            novos.push({ id: Date.now(), ponto_id: visitaPtId, tipo: 'recolhimento', data: abaDt, vendido: vendido, totalVendido: totVendido, totalReceber: totVendido * PRECO_BROWNIE, pago: false });
-                        }
-                        if (totEntrega > 0) {
-                            var qtd = {}; SABORES.forEach(function(s){ qtd[s] = parseInt(abaQt[s])||0; });
-                            novos.push({ id: Date.now()+1, ponto_id: visitaPtId, tipo: 'abastecimento', data: abaDt, qtd: qtd, vendido: {}, totalVendido: 0, totalReceber: 0, pago: false });
-                        }
-                        setVisitas(function(prev){ return prev.concat(novos); });
-                        novos.forEach(function(v){ try { sbSaveVisita(v); } catch(e){} });
-                        notif('Visita registrada!');
-                        setSobrou({ Brigadeiro: '', Ninho: '', 'Ninho c/ Nutella': '' });
-                        setAbaQt({ Brigadeiro: '', Ninho: '', 'Ninho c/ Nutella': '' });
-                        setShowVisita(false);
-                    };
                     const marcarPago = async (id) => { const vt = visitas.find(v => v.id === id); if (!vt)
                         return; const upd = Object.assign(Object.assign({}, vt), { pago: true }); await sbSaveVisita(upd); setVisitas(visitas.map(v => v.id === id ? upd : v)); };
                     const emEstoque = (pId) => { const ta = visitas.filter(v => v.ponto_id === pId && v.tipo === 'abastecimento').reduce((a, v) => SABORES.reduce((b, s) => (Object.assign(Object.assign({}, b), { [s]: (a[s] || 0) + (v.qtd[s] || 0) })), a), {}); const tv = visitas.filter(v => v.ponto_id === pId && v.tipo === 'recolhimento').reduce((a, v) => SABORES.reduce((b, s) => (Object.assign(Object.assign({}, b), { [s]: (a[s] || 0) + (v.vendido[s] || 0) })), a), {}); return SABORES.reduce((a, s) => (Object.assign(Object.assign({}, a), { [s]: Math.max((ta[s] || 0) - (tv[s] || 0), 0) })), {}); };
@@ -1362,7 +1406,8 @@ function App() {
                     return (React.createElement("div", null,
                         React.createElement("div", { style: { display: 'flex', gap: '7px', marginBottom: '14px', flexWrap: 'wrap' } },
                             [['pontos', '🏪 Pontos'], ['dashboard', '📊 Dashboard'], ['brownie', '🍫 Brownie']].map(([id, l]) => (React.createElement("button", { key: id, onClick: () => setAbaPt(id), style: Object.assign({}, B(abaPt === id ? C.pr : C.s3, abaPt === id ? 'white' : C.mt)) }, l))),
-                            React.createElement("button", { onClick: function(){ setVisitaPtId(ptSel); setShowVisita(true); }, style: Object.assign(Object.assign({}, B(C.pr+'22', C.pr)), { border: '1px solid '+C.pr+'44' }) }, "📋 Registrar Visita")),
+                            React.createElement("button", { onClick: () => setShowAba(true), style: Object.assign(Object.assign({}, B(`${C.gn}22`, C.gn)), { border: `1px solid ${C.gn}44` }) }, "\uD83D\uDCE6 Abastecimento"),
+                            React.createElement("button", { onClick: () => setShowRec(true), style: Object.assign(Object.assign({}, B(`${C.bl}22`, '#60a5fa')), { border: `1px solid ${C.bl}44` }) }, "\uD83D\uDCB0 Registrar Visita")),
                         abaPt === 'dashboard' && React.createElement("div", null,
                             React.createElement("div", { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(130px,1fr))', gap: '9px', marginBottom: '13px' } }, [{ l: 'A Receber', v: mo(pontos.reduce((a, p) => a + totalAb(p.id), 0)), c: '#f87171', bg: '#f8717115' }, { l: 'Já Recebido', v: mo(pontos.reduce((a, p) => a + totalRec(p.id), 0)), c: '#4ade80', bg: '#4ade8015' }, { l: 'Pontos', v: pontos.length, c: '#60a5fa', bg: '#60a5fa15' }].map((m, i) => (React.createElement("div", { key: i, style: { background: m.bg, borderRadius: '9px', padding: '11px', border: `1px solid ${m.c}33` } },
                                 React.createElement("div", { style: { fontSize: '9px', color: C.mt, textTransform: 'uppercase', marginBottom: '3px' } }, m.l),
@@ -1416,12 +1461,10 @@ function App() {
                                 React.createElement(Lb, { t: "Classifica\u00E7\u00E3o" }),
                                 React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', marginBottom: '11px' } }, CLASSES.map(cl => (React.createElement("button", { key: cl.v, onClick: () => setPtClass(cl.v), style: { padding: '6px', background: ptClass === cl.v ? `${cl.c}22` : 'transparent', color: ptClass === cl.v ? cl.c : C.mt, border: `1px solid ${ptClass === cl.v ? cl.c : C.bd}`, borderRadius: '6px', cursor: 'pointer', fontSize: '10px', fontWeight: '600', fontFamily: 'inherit' } }, cl.l)))),
                                 React.createElement("button", { onClick: addPonto, style: Object.assign(Object.assign({}, B(C.pr)), { width: '100%' }) }, "+ Cadastrar")),
-                            React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: '9px' } },
-                                React.createElement("input", { value: ptBk, onChange: function(e){ setPtBk(e.target.value); }, placeholder: "Buscar ponto...", style: Object.assign({}, I, { marginBottom: '6px' }) }),
-                                pontos.length === 0 ? React.createElement("div", { style: Object.assign(Object.assign({}, K), { textAlign: 'center', padding: '40px', color: C.mt }) },
+                            React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: '9px' } }, pontos.length === 0 ? React.createElement("div", { style: Object.assign(Object.assign({}, K), { textAlign: 'center', padding: '40px', color: C.mt }) },
                                 React.createElement("div", { style: { fontSize: '34px', marginBottom: '10px' } }, "\uD83C\uDFEA"),
                                 "Nenhum ponto cadastrado.") :
-                                pontos.filter(function(pt){ return !ptBk.trim() || pt.nome.toLowerCase().includes(ptBk.toLowerCase()) || (pt.responsavel||'').toLowerCase().includes(ptBk.toLowerCase()) || (pt.endereco||'').toLowerCase().includes(ptBk.toLowerCase()); }).map(pt => {
+                                pontos.map(pt => {
                                     const ab = totalAb(pt.id);
                                     const rc = totalRec(pt.id);
                                     const est = emEstoque(pt.id);
@@ -1444,7 +1487,6 @@ function App() {
                                             React.createElement("div", { style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' } },
                                                 React.createElement("span", { style: { fontSize: '9px', fontWeight: '700', padding: '2px 8px', borderRadius: '20px', background: `${classInfo(pt.classificacao).c}22`, color: classInfo(pt.classificacao).c } }, classInfo(pt.classificacao).l),
                                                 React.createElement("div", { style: { display: 'flex', gap: '4px' } },
-                                                    React.createElement("button", { onClick: function(e){ e.stopPropagation(); setSobrou({ Brigadeiro: '', Ninho: '', 'Ninho c/ Nutella': '' }); setAbaQt({ Brigadeiro: '', Ninho: '', 'Ninho c/ Nutella': '' }); setAbaDt(new Date().toISOString().split('T')[0]); setVisitaPtId(pt.id); setShowVisita(true); }, style: { background: C.pr+'22', color: C.pr, padding: '4px 8px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '11px', fontWeight: '600' } }, "📋"),
                                                     React.createElement("button", { onClick: e => { e.stopPropagation(); abrirEditPt(pt); }, style: { background: `${C.gn}22`, color: C.gn, padding: '4px 7px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '11px' } }, "\u270F\uFE0F"),
                                                     React.createElement("button", { onClick: e => { e.stopPropagation(); delPonto(pt.id); }, style: { background: `${C.rd}22`, color: C.rd, padding: '4px 7px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '11px' } }, "\u2715"),
                                                     React.createElement("a", { href: `https://wa.me/55${ns(pt.telefone)}`, target: "_blank", rel: "noreferrer", onClick: e => e.stopPropagation(), style: Object.assign(Object.assign({}, B('#128c7e')), { textDecoration: 'none', padding: '4px 7px', fontSize: '11px' }) }, "\uD83D\uDCAC")))),
@@ -1578,48 +1620,6 @@ function App() {
                                 React.createElement("div", { style: { display: 'flex', gap: '7px' } },
                                     React.createElement("button", { onClick: registrarRecolhimento, style: Object.assign(Object.assign({}, B(C.pr)), { flex: 1 }) }, "\uD83D\uDCB0 Confirmar"),
                                     React.createElement("button", { onClick: () => setShowRec(false), style: Object.assign(Object.assign({}, B(C.s3, C.mt)), { flex: 1 }) }, "Cancelar")))),
-                        showVisita && (function(){
-                            var pt = pontos.find(function(p){ return p.id === visitaPtId; });
-                            var estq = visitaPtId ? emEstoque(visitaPtId) : {};
-                            var temEstoque = SABORES.some(function(s){ return (estq[s]||0) > 0; });
-                            var crs = ['#c0392b', '#f59e0b', '#8b5cf6'];
-                            var totVendido = SABORES.reduce(function(a,s){ return a+(parseInt(sobrou[s])||0); }, 0);
-                            var totEntrega = SABORES.reduce(function(a,s){ return a+(parseInt(abaQt[s])||0); }, 0);
-                            return React.createElement("div", { style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1500, backdropFilter: 'blur(4px)' } },
-                                React.createElement("div", { style: { background: C.s, borderRadius: '14px', padding: '22px', maxWidth: '440px', width: '95%', border: '1px solid '+C.bd, maxHeight: '90vh', overflowY: 'auto' } },
-                                    React.createElement("div", { style: { marginBottom: '14px' } },
-                                        React.createElement("div", { style: { fontSize: '14px', fontWeight: '800', color: C.pr, marginBottom: '2px' } }, "📋 Registrar Visita"),
-                                        pt && React.createElement("div", { style: { fontSize: '12px', color: C.tx, fontWeight: '700' } }, pt.nome),
-                                        pt && React.createElement("div", { style: { fontSize: '10px', color: C.mt, marginTop: '2px' } }, pt.dia + (pt.endereco ? ' - '+pt.endereco : ''))),
-                                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' } },
-                                        React.createElement("span", { style: { fontSize: '11px', color: C.mt } }, "Data:"),
-                                        React.createElement("input", { type: 'date', value: abaDt, onChange: function(e){ setAbaDt(e.target.value); }, style: Object.assign({}, I) })),
-                                    temEstoque && React.createElement("div", { style: { marginBottom: '14px', background: C.s2, borderRadius: '9px', padding: '12px', border: '1px solid '+C.bd } },
-                                        React.createElement("div", { style: { fontSize: '10px', fontWeight: '700', color: C.mt, textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '1px' } }, "📦 Estoque Atual"),
-                                        React.createElement("div", { style: { display: 'flex', gap: '7px' } }, SABORES.map(function(s,i){ return React.createElement("div", { key: s, style: { flex: 1, textAlign: 'center', background: crs[i]+'15', borderRadius: '7px', padding: '7px 4px', border: '1px solid '+crs[i]+'33' } },
-                                            React.createElement("div", { style: { fontSize: '9px', color: C.mt, marginBottom: '2px' } }, s),
-                                            React.createElement("div", { style: { fontSize: '18px', fontWeight: '800', color: crs[i] } }, estq[s]||0),
-                                            React.createElement("div", { style: { fontSize: '9px', color: C.mt } }, "un")); }))),
-                                    temEstoque && React.createElement("div", { style: { marginBottom: '14px' } },
-                                        React.createElement("div", { style: { fontSize: '11px', fontWeight: '700', color: '#fbbf24', marginBottom: '8px' } }, "💰 O que foi VENDIDO"),
-                                        SABORES.map(function(s,i){ return React.createElement("div", { key: s, style: { display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '7px', background: C.s2, borderRadius: '7px', padding: '8px 10px' } },
-                                            React.createElement("span", { style: { flex: 1, fontSize: '11px', fontWeight: '600', color: crs[i] } }, s),
-                                            React.createElement("input", { type: 'number', min: '0', max: String(estq[s]||0), value: sobrou[s], onChange: function(e){ var v=e.target.value,ss=s; setSobrou(function(p){ return Object.assign({},p,{[ss]:v}); }); }, placeholder: '0', style: Object.assign({}, I, { width: '70px', textAlign: 'center' }) }),
-                                            React.createElement("span", { style: { fontSize: '10px', color: C.mt } }, "/ "+(estq[s]||0)+" un")); }),
-                                        totVendido > 0 && React.createElement("div", { style: { background: C.pr+'15', border: '1px solid '+C.pr+'33', borderRadius: '8px', padding: '9px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' } },
-                                            React.createElement("span", { style: { fontSize: '11px', color: C.mt } }, totVendido+" vendidos"),
-                                            React.createElement("span", { style: { fontSize: '16px', fontWeight: '800', color: C.pr } }, "R$ "+(totVendido*PRECO_BROWNIE).toFixed(2).replace('.',',')))),
-                                    React.createElement("div", { style: { marginBottom: '16px' } },
-                                        React.createElement("div", { style: { fontSize: '11px', fontWeight: '700', color: '#4ade80', marginBottom: '8px' } }, "📦 Nova Entrega"),
-                                        SABORES.map(function(s,i){ return React.createElement("div", { key: s, style: { display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '7px', background: C.s2, borderRadius: '7px', padding: '8px 10px' } },
-                                            React.createElement("span", { style: { flex: 1, fontSize: '11px', fontWeight: '600', color: crs[i] } }, s),
-                                            React.createElement("input", { type: 'number', min: '0', value: abaQt[s], onChange: function(e){ var v=e.target.value,ss=s; setAbaQt(function(p){ return Object.assign({},p,{[ss]:v}); }); }, placeholder: '0', style: Object.assign({}, I, { width: '70px', textAlign: 'center' }) }),
-                                            React.createElement("span", { style: { fontSize: '10px', color: C.mt } }, "un")); }),
-                                        totEntrega > 0 && React.createElement("div", { style: { background: '#4ade8015', border: '1px solid #4ade8033', borderRadius: '8px', padding: '9px 12px', marginTop: '6px', fontSize: '12px', fontWeight: '700', color: '#4ade80', textAlign: 'center' } }, "Entregar: "+totEntrega+" un")),
-                                    React.createElement("div", { style: { display: 'flex', gap: '8px' } },
-                                        React.createElement("button", { onClick: registrarVisita, style: Object.assign(Object.assign({}, B(C.gn)), { flex: 1, padding: '10px', fontSize: '13px' }) }, "Salvar Visita"),
-                                        React.createElement("button", { onClick: function(){ setShowVisita(false); }, style: Object.assign(Object.assign({}, B(C.s3, C.mt)), { flex: 1, padding: '10px', fontSize: '13px' }) }, "Cancelar"))));
-                        })(),
                         editPt && React.createElement("div", { style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' } },
                             React.createElement("div", { style: { background: C.s, borderRadius: '14px', padding: '20px', maxWidth: '380px', width: '90%', border: `1px solid ${C.bd2}` } },
                                 React.createElement("div", { style: { fontSize: '13px', fontWeight: '700', color: C.tx, marginBottom: '14px' } }, "\u270F\uFE0F Editar Ponto"),
@@ -1788,76 +1788,8 @@ function App() {
                         new Date().toLocaleDateString('pt-BR'))),
                 React.createElement("div", { style: { display: 'flex', gap: '10px' } },
                     React.createElement("a", { href: `https://wa.me/55${ns((c === null || c === void 0 ? void 0 : c.telefone) || '')}`, target: "_blank", rel: "noreferrer", style: { padding: '10px 20px', background: '#128c7e', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '700', fontSize: '13px' } }, "\uD83D\uDCAC Abrir WhatsApp"),
-                    React.createElement("button", { onClick: () => setPedImg(null), style: { padding: '10px 20px', background: '#333', color: '#888', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontFamily: 'inherit' } }, "\u2715 Fechar"))))
-        })(),
-            editIns && (() => {
-                const ins = insumos.find(i => i.id === editIns);
-                if (!ins) return null;
-                const cpgEi = cpg(String(eiVl), String(eiTm), eiUn);
-                const uBEi = lub(eiUn);
-                const cpgAnt = ins.valor && ins.tamanho ? cpg(String(ins.valor), String(ins.tamanho), ins.unidade) : 0;
-                return React.createElement("div", { style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, backdropFilter: 'blur(4px)' } },
-                    React.createElement("div", { style: { background: C.s, borderRadius: '14px', padding: '22px', maxWidth: '420px', width: '95%', border: '1px solid ' + C.bd, maxHeight: '90vh', overflowY: 'auto' } },
-                        React.createElement("div", { style: { marginBottom: '14px' } },
-                            React.createElement("div", { style: { fontSize: '14px', fontWeight: '800', color: C.tx, marginBottom: '3px' } }, "✏️ Nova compra — ", ins.nome),
-                            React.createElement("div", { style: { fontSize: '11px', color: C.mt } }, "Registre a compra mais recente. O histórico anterior é mantido.")),
-                        React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' } },
-                            React.createElement("div", null,
-                                React.createElement(Lb, { t: "Marca" }),
-                                React.createElement("input", { value: eiMk, onChange: function(e){ setEiMk(e.target.value); }, placeholder: "Ex: Harald", style: Object.assign({}, I) })),
-                            React.createElement("div", null,
-                                React.createElement(Lb, { t: "Onde Comprou" }),
-                                React.createElement("input", { value: eiOd, onChange: function(e){ setEiOd(e.target.value); }, placeholder: "Ex: Mercadao", style: Object.assign({}, I) }))),
-                        React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 80px', gap: '10px', marginBottom: '10px' } },
-                            React.createElement("div", null,
-                                React.createElement(Lb, { t: "Tamanho *" }),
-                                React.createElement("input", { type: "number", value: eiTm, onChange: function(e){ setEiTm(e.target.value); }, placeholder: "500", step: "0.01", style: Object.assign({}, I) })),
-                            React.createElement("div", null,
-                                React.createElement(Lb, { t: "Un" }),
-                                React.createElement("select", { value: eiUn, onChange: function(e){ setEiUn(e.target.value); }, style: Object.assign({}, I) },
-                                    ['g','kg','mL','L','un'].map(function(u){ return React.createElement("option", { key: u, value: u }, u); })))),
-                        React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' } },
-                            React.createElement("div", null,
-                                React.createElement(Lb, { t: "Valor Pago (R$) *" }),
-                                React.createElement("input", { type: "number", value: eiVl, onChange: function(e){ setEiVl(e.target.value); }, placeholder: "0,00", step: "0.01", style: Object.assign({}, I) })),
-                            React.createElement("div", null,
-                                React.createElement(Lb, { t: "Data" }),
-                                React.createElement("input", { type: "date", value: eiDt, onChange: function(e){ setEiDt(e.target.value); }, style: Object.assign({}, I) }))),
-                        eiVl && eiTm && React.createElement("div", { style: { background: C.pr + '15', border: '1px solid ' + C.pr + '33', borderRadius: '8px', padding: '11px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
-                            React.createElement("div", null,
-                                React.createElement("div", { style: { fontSize: '10px', color: C.mt } }, "Custo por ", uBEi),
-                                React.createElement("div", { style: { fontSize: '18px', fontWeight: '800', color: C.pr } }, "R$" + cpgEi.toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 }))),
-                            cpgAnt > 0 && React.createElement("div", { style: { textAlign: 'right' } },
-                                React.createElement("div", { style: { fontSize: '10px', color: C.mt } }, "Variação vs anterior"),
-                                React.createElement("div", { style: { fontSize: '14px', fontWeight: '800', color: cpgEi > cpgAnt ? '#f87171' : '#4ade80' } },
-                                    cpgEi > cpgAnt ? '▲' : '▼', " ", Math.abs(((cpgEi - cpgAnt) / cpgAnt) * 100).toFixed(1), "%"))),
-                        React.createElement("div", { style: { display: 'flex', gap: '8px' } },
-                            React.createElement("button", { onClick: async function() {
-                                if (!eiVl || !eiTm) { notif('⚠️ Preencha valor e tamanho'); return; }
-                                const entrada = { data: eiDt, valor: parseFloat(eiVl), tamanho: parseFloat(eiTm), unidade: eiUn, onde: eiOd, marca: eiMk };
-                                const histBase = (ins.historico && ins.historico.length > 0) ? ins.historico : [{ data: ins.data||'', valor: ins.valor, tamanho: ins.tamanho, unidade: ins.unidade, onde: ins.onde||'', marca: ins.marca||'' }];
-                                const novoHist = histBase.concat([entrada]);
-                                const upd = Object.assign({}, ins, { valor: parseFloat(eiVl), tamanho: parseFloat(eiTm), unidade: eiUn, marca: eiMk, onde: eiOd, historico: novoHist });
-                                await sbUpsert('insumos', Object.assign({}, upd, { historico: JSON.stringify(novoHist) }));
-                                setInsumos(insumos.map(function(i){ return i.id === editIns ? upd : i; }));
-                                // Atualizar custo das receitas que usam este insumo
-                                const novoCpg = cpg(String(eiVl), String(eiTm), eiUn);
-                                setReceitas(receitas.map(function(rec) {
-                                    const temIns = (rec.itens||[]).some(function(it){ return it.tipo==='insumo' && it.refId===editIns; });
-                                    if (!temIns) return rec;
-                                    const itensAtt = rec.itens.map(function(it) {
-                                        if (it.tipo!=='insumo' || it.refId!==editIns) return it;
-                                        return Object.assign({}, it, { custoPorBase: novoCpg, custoTotal: novoCpg * it.qtd });
-                                    });
-                                    return Object.assign({}, rec, { itens: itensAtt });
-                                }));
-                                notif('✅ Compra registrada!');
-                                setEditIns(null);
-                                setInsExpanded(function(p){ return Object.assign({}, p, { [editIns]: true }); });
-                            }, style: Object.assign({}, B(C.gn), { flex: 1, padding: '10px', fontSize: '13px' }) }, "💾 Salvar Compra"),
-                            React.createElement("button", { onClick: () => setEditIns(null), style: Object.assign(Object.assign({}, B(C.s3, C.mt)), { flex: 1, padding: '10px', fontSize: '13px' }) }, "Cancelar"))))
-            })())
-        );
+                    React.createElement("button", { onClick: () => setPedImg(null), style: { padding: '10px 20px', background: '#333', color: '#888', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontFamily: 'inherit' } }, "\u2715 Fechar"))));
+        })()));
 }
 
 try{
