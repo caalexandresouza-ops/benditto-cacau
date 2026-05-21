@@ -1195,13 +1195,13 @@ function App() {
                         return;
                     } const obj = { nome: recNm.trim(), itens: recIt, rendimento: parseFloat(recRd) || 0, unidadeRend: recUr, unidade_rend: recUr }; if (editRec) {
                         const upd = Object.assign(Object.assign({}, receitas.find(r => r.id === editRec)), obj);
-                        await sbUpsert('receitas', Object.assign(Object.assign({}, upd), { itens: JSON.stringify(upd.itens) }));
                         setReceitas(receitas.map(r => r.id === editRec ? upd : r));
+                        try { await sbUpsert('receitas', Object.assign(Object.assign({}, upd), { itens: JSON.stringify(upd.itens) })); } catch(e) {}
                     }
                     else {
                         const novo = Object.assign(Object.assign({ id: Date.now() }, obj), { criadoEm: new Date().toISOString(), criado_em: new Date().toISOString() });
-                        await sbUpsert('receitas', Object.assign(Object.assign({}, novo), { itens: JSON.stringify(novo.itens) }));
                         setReceitas([...receitas, novo]);
+                        try { await sbUpsert('receitas', Object.assign(Object.assign({}, novo), { itens: JSON.stringify(novo.itens) })); } catch(e) {}
                     } notif(editRec ? '✅ Atualizada!' : '✅ Receita salva!'); setRecNm(''); setRecIt([]); setEditRec(null); setRecRd(''); setRecUr('un'); };
                     return (React.createElement("div", null,
                         React.createElement("div", { style: { display: 'flex', gap: '7px', marginBottom: '16px' } },
