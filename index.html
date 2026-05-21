@@ -468,7 +468,7 @@ function App() {
             if (!rec)
                 return;
             const ct = ctr(rec.itens);
-            const custoBase = rec.rendimento > 0 ? (recUn === 'un' ? ct : ct / rec.rendimento) : ct;
+            const custoBase = rec.rendimento > 0 ? ct / rec.rendimento : ct; // custo por unidade/grama
             item = { id: Date.now(), tipo: 'receita', refId: rec.id, nome: '📋'+rec.nome, qtd: q, unidade: recUn, custoPorBase: custoBase, custoTotal: custoBase * q };
         }
         if (recIt.some(i => i.refId === item.refId && i.tipo === item.tipo)) {
@@ -1181,7 +1181,7 @@ function App() {
                         if (!rec)
                             return;
                         const ct = ctr(rec.itens);
-                        const custoBase2 = rec.rendimento > 0 ? (recUn === 'un' ? ct : ct / rec.rendimento) : ct; item = { id: Date.now(), tipo: 'receita', refId: rec.id, nome: '📋'+rec.nome, qtd: q, unidade: recUn, custoPorBase: custoBase2, custoTotal: custoBase2 * q };
+                        const custoBase2 = rec.rendimento > 0 ? ct / rec.rendimento : ct; // custo por unidade/grama item = { id: Date.now(), tipo: 'receita', refId: rec.id, nome: '📋'+rec.nome, qtd: q, unidade: recUn, custoPorBase: custoBase2, custoTotal: custoBase2 * q };
                     } if (recIt.some(i => i.refId === item.refId && i.tipo === item.tipo)) {
                         notif('⚠️ Já adicionado!');
                         return;
@@ -1298,9 +1298,13 @@ function App() {
                                             r.nome))),
                                     React.createElement("div", { style: { display: 'flex', gap: '5px' } },
                                         React.createElement("input", { type: "number", value: recQt, onChange: e => setRecQt(e.target.value), placeholder: "Qtd", step: "0.1", style: Object.assign(Object.assign({}, I), { flex: 1, fontSize: '11px' }) }),
-                                        recTp === 'receita' && React.createElement("select", { value: recUn, onChange: function(e){ setRecUn(e.target.value); }, style: Object.assign(Object.assign({}, I), { width: '60px', fontSize: '11px', padding: '7px 4px' }) },
-                                            React.createElement("option", { value: "g" }, "g"),
-                                            React.createElement("option", { value: "un" }, "un")),
+                                        recTp === 'receita' && (function(){
+                                            var recSel = receitas.find(function(r){ return r.id === parseInt(recId); });
+                                            var unLabel = recSel ? (recSel.unidadeRend || 'un') : 'un';
+                                            var rend = recSel ? recSel.rendimento : 0;
+                                            return React.createElement("select", { value: recUn, onChange: function(e){ setRecUn(e.target.value); }, style: Object.assign(Object.assign({}, I), { width: '75px', fontSize: '11px', padding: '7px 4px' }) },
+                                                React.createElement("option", { value: "un" }, unLabel === 'g' ? "g" : "un (1/"+rend+")"),
+                                                unLabel !== 'g' && React.createElement("option", { value: "g" }, "g (grama)")); })(),
                                         React.createElement("button", { onClick: addItRec, style: Object.assign(Object.assign({}, B(C.gn)), { padding: '7px 12px', flexShrink: 0, fontSize: '12px' }) }, "+Add"))),
                                 recIt.length > 0 && React.createElement("div", { style: { marginBottom: '10px' } },
                                     React.createElement("div", { style: { fontSize: '10px', color: C.mt, fontWeight: '600', marginBottom: '6px', textTransform: 'uppercase' } },
