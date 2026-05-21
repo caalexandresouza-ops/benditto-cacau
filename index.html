@@ -156,7 +156,7 @@ function App() {
     const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56ZXhqaWxtd3Zid3Bpb25wYnprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MDI3NzUsImV4cCI6MjA5NDE3ODc3NX0.br90esj5yC_QAFfFWCQ-uzf218AhHpvazqdU5qtU6sw';
     const sbH = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
     const sbGet = async (tb) => { const r = await fetch(`${SB_URL}/rest/v1/${tb}?select=*&order=id`, { headers: sbH }); return r.json(); };
-    const sbUpsert = async (tb, data) => { await fetch(`${SB_URL}/rest/v1/${tb}`, { method: 'POST', headers: Object.assign(Object.assign({}, sbH), { 'Prefer': 'resolution=merge-duplicates,return=representation' }), body: JSON.stringify(data) }); };
+    const sbUpsert = async (tb, data) => { const r = await fetch(`${SB_URL}/rest/v1/${tb}`, { method: 'POST', headers: Object.assign(Object.assign({}, sbH), { 'Prefer': 'resolution=merge-duplicates,return=representation' }), body: JSON.stringify(data) }); if(!r.ok){ const err=await r.text(); console.error('sbUpsert error',tb,r.status,err); throw new Error(err); } };
     const sbDel = async (tb, id) => { await fetch(SB_URL + '/rest/v1/' + tb + '?id=eq.' + id, { method: 'DELETE', headers: sbH }); };
     const sbSavePonto = async (p) => { try {
         await sbUpsert('pontos', { id: p.id, nome: p.nome, responsavel: p.responsavel, telefone: p.telefone, dia: p.dia, endereco: p.endereco, classificacao: p.classificacao, preco_revenda: JSON.stringify(p.precoRevenda || {}) });
@@ -489,12 +489,18 @@ function App() {
         if (editRec) {
             const upd = Object.assign(Object.assign({}, receitas.find(r => r.id === editRec)), obj);
             setReceitas(receitas.map(r => r.id === editRec ? upd : r));
-            try { await sbUpsert('receitas', Object.assign(Object.assign({}, upd), { itens: JSON.stringify(upd.itens) })); } catch(e) {}
+            try {
+                const payload = Object.assign({}, upd, { itens: JSON.stringify(upd.itens) });
+                await sbUpsert('receitas', payload);
+            } catch(e) { notif('\u26A0\uFE0F Receita atualizada localmente mas erro na nuvem: '+e.message); }
         }
         else {
             const novo = Object.assign(Object.assign({ id: Date.now() }, obj), { criadoEm: new Date().toISOString(), criado_em: new Date().toISOString() });
             setReceitas([...receitas, novo]);
-            try { await sbUpsert('receitas', Object.assign(Object.assign({}, novo), { itens: JSON.stringify(novo.itens) })); } catch(e) {}
+            try {
+                const payload = Object.assign({}, novo, { itens: JSON.stringify(novo.itens) });
+                await sbUpsert('receitas', payload);
+            } catch(e) { notif('\u26A0\uFE0F Receita salva localmente mas erro na nuvem: '+e.message); }
         }
         notif(editRec ? '✅ Atualizada!' : '✅ Receita salva!');
         setRecNm('');
@@ -1790,13 +1796,3 @@ function App() {
                     React.createElement("a", { href: `https://wa.me/55${ns((c === null || c === void 0 ? void 0 : c.telefone) || '')}`, target: "_blank", rel: "noreferrer", style: { padding: '10px 20px', background: '#128c7e', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '700', fontSize: '13px' } }, "\uD83D\uDCAC Abrir WhatsApp"),
                     React.createElement("button", { onClick: () => setPedImg(null), style: { padding: '10px 20px', background: '#333', color: '#888', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontFamily: 'inherit' } }, "\u2715 Fechar"))));
         })()));
-}
-
-try{
-  ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App,null));
-}catch(e){
-  document.getElementById('root').innerHTML='<div style="color:#f87171;padding:30px;font-family:monospace;background:#1a1a1a;min-height:100vh"><h2>Erro:</h2><pre style="margin-top:12px;white-space:pre-wrap;font-size:14px">'+e.message+'</pre></div>';
-}
-</script>
-</body>
-</html>
