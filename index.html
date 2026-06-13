@@ -784,19 +784,7 @@ input[readonly]{background:var(--surface2);opacity:.8}
       <div class="field"><label>Meu preço de venda (R$)</label><input type="number" id="c-preco-venda" min="0" step="0.01" placeholder="Ex: 5,00" title="Quanto você cobra deste cliente por brownie"></div>
       <div class="field"><label>Preço de revenda do cliente (R$)</label><input type="number" id="c-preco-revenda" min="0" step="0.01" placeholder="Ex: 8,00" title="Quanto o cliente cobra dos consumidores"></div>
     </div>
-    <div class="field" style="margin-bottom:.85rem">
-      <label style="margin-bottom:6px;display:block">Modelo de cobrança</label>
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <label style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:var(--radius);border:1.5px solid var(--border);cursor:pointer;flex:1;min-width:180px;font-weight:500;font-size:13px" id="label-repostos">
-          <input type="radio" name="c-modelo-cobranca" id="c-modelo-cobranca" value="repostos" onchange="document.getElementById('label-repostos').style.borderColor='var(--amber)';document.getElementById('label-vendidos').style.borderColor='var(--border)'">
-          <span>💰 Paga pelo que <strong>repõe</strong></span>
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:var(--radius);border:1.5px solid var(--border);cursor:pointer;flex:1;min-width:180px;font-weight:500;font-size:13px" id="label-vendidos">
-          <input type="radio" name="c-modelo-cobranca" value="vendidos" onchange="document.getElementById('label-vendidos').style.borderColor='var(--amber)';document.getElementById('label-repostos').style.borderColor='var(--border)'">
-          <span>📦 Paga pelo que <strong>vendeu</strong></span>
-        </label>
-      </div>
-    </div>
+    <div class="row">
       <div class="field"><label>Dia preferencial</label>
         <select id="c-dia">
           <option value="">Qualquer dia</option>
@@ -815,6 +803,20 @@ input[readonly]{background:var(--surface2);opacity:.8}
         Este cliente requer Nota Fiscal (NF)
       </label>
       <div style="font-size:11px;color:var(--text3);margin-top:4px;margin-left:28px">Marque se o cliente precisa de NF a cada venda</div>
+    </div>
+
+    <div style="margin-bottom:.85rem">
+      <label style="display:block;font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text)">Modelo de cobrança</label>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:8px;padding:12px 16px;border-radius:var(--radius);border:2px solid var(--amber);cursor:pointer;flex:1;min-width:160px;background:rgba(167,108,42,.06)" id="label-repostos">
+          <input type="radio" name="c-modelo-cobranca" id="c-modelo-cobranca" value="repostos" style="accent-color:var(--amber);width:16px;height:16px" onchange="document.getElementById('label-repostos').style.borderColor='var(--amber)';document.getElementById('label-vendidos').style.borderColor='var(--border)'">
+          <span style="font-size:13px;font-weight:500">💰 Paga pelo que <strong>repõe</strong></span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:12px 16px;border-radius:var(--radius);border:2px solid var(--border);cursor:pointer;flex:1;min-width:160px" id="label-vendidos">
+          <input type="radio" name="c-modelo-cobranca" value="vendidos" style="accent-color:var(--amber);width:16px;height:16px" onchange="document.getElementById('label-vendidos').style.borderColor='var(--amber)';document.getElementById('label-repostos').style.borderColor='var(--border)'">
+          <span style="font-size:13px;font-weight:500">📦 Paga pelo que <strong>vendeu</strong></span>
+        </label>
+      </div>
     </div>
 
     <div class="field" style="margin-bottom:1rem"><label>Observações</label>
